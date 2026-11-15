@@ -24,7 +24,15 @@ label.toggle input{width:20px;height:20px;accent-color:var(--ink)}
 main{max-width:960px;margin:0 auto;padding:16px 16px 140px}
 .count{font-size:13px;margin:4px 0 12px}
 .list{display:flex;flex-direction:column;gap:10px}
-.item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center}
+.item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center}
+.thumb{width:88px;height:88px;border-radius:12px;overflow:hidden;background:var(--blush);display:flex;align-items:center;justify-content:center;border:0;padding:0;cursor:zoom-in}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.ph{cursor:default;font-family:'Cormorant Garamond',Georgia,serif;font-size:40px;color:var(--goldText)}
+.lb{position:fixed;inset:0;background:rgba(47,40,40,.85);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;flex-direction:column;gap:12px}
+.lb.open{display:flex}
+.lb img{max-width:min(92vw,560px);max-height:70vh;border-radius:16px;background:#fff}
+.lb p{color:var(--ivory);margin:0;text-align:center;font-size:16px}
+.lb button{min-height:44px;padding:0 22px;border-radius:22px;border:1px solid var(--ivory);background:transparent;color:var(--ivory);font:inherit;font-weight:600;cursor:pointer}
 .meta{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--goldText);font-weight:600}
 .name{font-family:'Cormorant Garamond',Georgia,serif;font-size:21px;font-weight:600;line-height:1.15;margin:2px 0}
 .price{font-size:22px;font-weight:600;text-align:right;white-space:nowrap}
@@ -49,7 +57,7 @@ main{max-width:960px;margin:0 auto;padding:16px 16px 140px}
 .qty button{width:32px;height:32px;border-radius:16px;border:1px solid var(--ivory);background:transparent;color:var(--ivory);font-size:16px;cursor:pointer}
 .toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:var(--ink);color:var(--ivory);padding:10px 18px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.show{opacity:1}
-@media (max-width:520px){.price{font-size:20px}.top img{height:52px}}
+@media (max-width:520px){.price{font-size:20px}.top img{height:52px}.thumb{width:72px;height:72px}.item{grid-template-columns:auto 1fr}.price{grid-column:2;text-align:left}}
 </style>
 </head>
 <body>
@@ -86,9 +94,10 @@ main{max-width:960px;margin:0 auto;padding:16px 16px 140px}
     </div>
   </div>
 </div>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Foto del producto"><img id="lbImg" alt=""><p id="lbCap"></p><button type="button" id="lbClose">Cerrar</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
-const P = [{"n": "Mini contorno líquido 3D", "p": 7000, "u": 36, "m": "Karité", "cat": "Maquillaje"}, {"n": "Corrector de ojeras", "p": 8500, "u": 24, "m": "Romantic Rain", "cat": "Maquillaje"}, {"n": "Polvo compacto control de grasa", "p": 16000, "u": 24, "m": "Karité", "cat": "Maquillaje"}, {"n": "Parches de colágeno para ojos con retinol", "p": 17000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Parches de colágeno para ojos baba de caracol", "p": 19000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Bálsamo de labios Honey Peach", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje"}, {"n": "Bálsamo de labios Grapefruit", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje"}, {"n": "Bálsamo de labios Honey Miel", "p": 5000, "u": 6, "m": "Bioaqua", "cat": "Maquillaje"}, {"n": "Rubor líquido Rose Touch", "p": 14000, "u": 12, "m": "Kiss Beauty", "cat": "Maquillaje"}, {"n": "Rubor compacto", "p": 8000, "u": 12, "m": "Blush Powder", "cat": "Maquillaje"}, {"n": "Set de diademas para skincare + muñequeras", "p": 17000, "u": 6, "m": "Genérico", "cat": "Accesorio"}, {"n": "Base BB Cream Perfect Cover", "p": 8000, "u": 12, "m": "Chanleevi", "cat": "Maquillaje"}, {"n": "Balaca de maquillaje", "p": 8000, "u": 5, "m": "Genérico", "cat": "Accesorio"}, {"n": "Mascarilla velo facial", "p": 2000, "u": 30, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Lápiz de cejas 2 en 1 con cepillo", "p": 5000, "u": 6, "m": "Mila", "cat": "Maquillaje"}, {"n": "Lápiz delineador de labios", "p": 3000, "u": 10, "m": "Pink Key", "cat": "Maquillaje"}, {"n": "Pestañina Sky High", "p": 8000, "u": 6, "m": "Meike Glamour", "cat": "Maquillaje"}, {"n": "Fijador de maquillaje", "p": 15000, "u": 17, "m": "Billion Beauty", "cat": "Maquillaje"}, {"n": "Labial en barra con aceite de almendras", "p": 6000, "u": 23, "m": "Gul Flower", "cat": "Maquillaje"}, {"n": "Tinta de labios con moño", "p": 8000, "u": 24, "m": "Meike Glamour", "cat": "Maquillaje"}, {"n": "Set x3 de beauty blender", "p": 10000, "u": 5, "m": "Auty", "cat": "Maquillaje"}, {"n": "Kit de sérums antiedad", "p": 29000, "u": 3, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Tónico facial hidratante de rosas", "p": 15000, "u": 8, "m": "Paulis", "cat": "Cuidado de la piel"}, {"n": "Cosmetiquera pequeña con cierre", "p": 15000, "u": 9, "m": "Genérico", "cat": "Accesorio"}, {"n": "Cosmetiquera Beautiful Secret", "p": 20000, "u": 1, "m": "Genérico", "cat": "Accesorio"}, {"n": "Parches anti acné de figuras", "p": 7000, "u": 3, "m": "Hanel", "cat": "Cuidado de la piel"}, {"n": "Parches anti acné invisibles", "p": 9000, "u": 7, "m": "Sadoer", "cat": "Cuidado de la piel"}, {"n": "Combo recargado retinol", "p": 55000, "u": 2, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Combo recargado ácido hialurónico", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Combo recargado centella", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel"}, {"n": "Combo x4 de niacinamida", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel"}];
+const P = [{"n": "Mini contorno líquido 3D", "p": 7000, "u": 36, "m": "Karité", "cat": "Maquillaje", "f": "img/mini-contorno-liquido-3d.jpg"}, {"n": "Corrector de ojeras", "p": 8500, "u": 24, "m": "Romantic Rain", "cat": "Maquillaje", "f": "img/corrector-de-ojeras.jpg"}, {"n": "Polvo compacto control de grasa", "p": 16000, "u": 24, "m": "Karité", "cat": "Maquillaje", "f": "img/polvo-compacto-control-de-grasa.jpg"}, {"n": "Parches de colágeno para ojos con retinol", "p": 17000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/parches-de-colageno-para-ojos-con-retinol.jpg"}, {"n": "Parches de colágeno para ojos baba de caracol", "p": 19000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/parches-de-colageno-para-ojos-baba-de-caracol.jpg"}, {"n": "Bálsamo de labios Honey Peach", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje", "f": null}, {"n": "Bálsamo de labios Grapefruit", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje", "f": "img/balsamo-de-labios-grapefruit.jpg"}, {"n": "Bálsamo de labios Honey Miel", "p": 5000, "u": 6, "m": "Bioaqua", "cat": "Maquillaje", "f": null}, {"n": "Rubor líquido Rose Touch", "p": 14000, "u": 12, "m": "Kiss Beauty", "cat": "Maquillaje", "f": "img/rubor-liquido-rose-touch.jpg"}, {"n": "Rubor compacto", "p": 8000, "u": 12, "m": "Blush Powder", "cat": "Maquillaje", "f": "img/rubor-compacto.jpg"}, {"n": "Set de diademas para skincare + muñequeras", "p": 17000, "u": 6, "m": "Genérico", "cat": "Accesorio", "f": "img/set-de-diademas-para-skincare-munequeras.jpg"}, {"n": "Base BB Cream Perfect Cover", "p": 8000, "u": 12, "m": "Chanleevi", "cat": "Maquillaje", "f": "img/base-bb-cream-perfect-cover.jpg"}, {"n": "Balaca de maquillaje", "p": 8000, "u": 5, "m": "Genérico", "cat": "Accesorio", "f": "img/balaca-de-maquillaje.jpg"}, {"n": "Mascarilla velo facial", "p": 2000, "u": 30, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/mascarilla-velo-facial.jpg"}, {"n": "Lápiz de cejas 2 en 1 con cepillo", "p": 5000, "u": 6, "m": "Mila", "cat": "Maquillaje", "f": "img/lapiz-de-cejas-2-en-1-con-cepillo.jpg"}, {"n": "Lápiz delineador de labios", "p": 3000, "u": 10, "m": "Pink Key", "cat": "Maquillaje", "f": "img/lapiz-delineador-de-labios.jpg"}, {"n": "Pestañina Sky High", "p": 8000, "u": 6, "m": "Meike Glamour", "cat": "Maquillaje", "f": "img/pestanina-sky-high.jpg"}, {"n": "Fijador de maquillaje", "p": 15000, "u": 17, "m": "Billion Beauty", "cat": "Maquillaje", "f": null}, {"n": "Labial en barra con aceite de almendras", "p": 6000, "u": 23, "m": "Gul Flower", "cat": "Maquillaje", "f": "img/labial-en-barra-con-aceite-de-almendras.jpg"}, {"n": "Tinta de labios con moño", "p": 8000, "u": 24, "m": "Meike Glamour", "cat": "Maquillaje", "f": "img/tinta-de-labios-con-mono.jpg"}, {"n": "Set x3 de beauty blender", "p": 10000, "u": 5, "m": "Auty", "cat": "Maquillaje", "f": null}, {"n": "Kit de sérums antiedad", "p": 29000, "u": 3, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/kit-de-serums-antiedad.jpg"}, {"n": "Tónico facial hidratante de rosas", "p": 15000, "u": 8, "m": "Paulis", "cat": "Cuidado de la piel", "f": null}, {"n": "Cosmetiquera pequeña con cierre", "p": 15000, "u": 9, "m": "Genérico", "cat": "Accesorio", "f": "img/cosmetiquera-pequena-con-cierre.jpg"}, {"n": "Cosmetiquera Beautiful Secret", "p": 20000, "u": 1, "m": "Genérico", "cat": "Accesorio", "f": null}, {"n": "Parches anti acné de figuras", "p": 7000, "u": 3, "m": "Hanel", "cat": "Cuidado de la piel", "f": null}, {"n": "Parches anti acné invisibles", "p": 9000, "u": 7, "m": "Sadoer", "cat": "Cuidado de la piel", "f": "img/parches-anti-acne-invisibles.jpg"}, {"n": "Combo recargado retinol", "p": 55000, "u": 2, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo recargado ácido hialurónico", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo recargado centella", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo x4 de niacinamida", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}];
 const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 const CATS = ['Todo','Maquillaje','Cuidado de la piel','Accesorio'];
@@ -129,11 +138,14 @@ function render(){
   rows.forEach(({p,i}) => {
     const d = document.createElement('div'); d.className='item';
     d.innerHTML =
+      (p.f ? '<button type="button" class="thumb"><img loading="lazy" alt=""></button>' : '<div class="thumb ph" aria-hidden="true"></div>') +
       '<div><div class="meta"></div><div class="name"></div><div class="stock"></div>' + (show ? '<div class="cost"></div>' : '') + '</div>' +
       '<div class="price"></div>' +
       '<div class="actions"><button class="btn dark add" type="button"></button><button class="btn cp" type="button">Copiar mensaje</button><a class="btn wa" target="_blank" rel="noopener">WhatsApp</a></div>';
     d.querySelector('.meta').textContent = p.m + ' · ' + p.cat;
     d.querySelector('.name').textContent = p.n;
+    if(p.f){ const th=d.querySelector('.thumb'); const im=th.querySelector('img'); im.src=p.f; im.alt=p.n; th.setAttribute('aria-label','Ver foto de '+p.n); th.onclick=()=>{ $('lbImg').src=p.f; $('lbImg').alt=p.n; $('lbCap').textContent=p.n+' · '+fmt(p.p); $('lb').classList.add('open'); $('lbClose').focus(); }; }
+    else d.querySelector('.thumb').textContent = p.n.charAt(0);
     d.querySelector('.stock').innerHTML = p.u + ' disponibles' + (p.u<=3 ? '<span class="low">Últimas unidades</span>' : '');
     d.querySelector('.price').textContent = fmt(p.p);
     const add = d.querySelector('.add');
@@ -166,6 +178,9 @@ $('copyAll').onclick = () => { const t=msgOffer(); if(!t) return toast('La ofert
 $('waAll').onclick = e => { if(!Object.keys(offer).length){ e.preventDefault(); toast('La oferta está vacía'); } };
 $('clear').onclick = () => { offer={}; store(); renderBar(); render(); };
 $('q').oninput = render; $('sort').onchange = render;
+$('lbClose').onclick=()=>$('lb').classList.remove('open');
+$('lb').onclick=e=>{ if(e.target.id==='lb') $('lb').classList.remove('open'); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('lb').classList.remove('open'); });
 renderCats(); render(); renderBar();
 </script>
 </body>
