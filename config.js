@@ -5,6 +5,6 @@
 // La clave anon es pública por diseño: la seguridad la dan las políticas (RLS) de schema.sql.
 // NUNCA pongas aquí la clave "service_role" / "secret".
 window.LUVANA_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://letytgfyvzmhsyrqwuhn.supabase.co',
+  anonKey: 'sb_publishable_J7Lrd1NN4RdW-r-06iCGTA_oIGvJyx2'
 };
