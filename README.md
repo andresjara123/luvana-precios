@@ -1,6 +1,7 @@
 # LUVANA Beauty & Care — precios, ventas e inventario
 
-- `index.html` — catálogo público de precios (para clientas). Sin costos.
+- `index.html` — catálogo para clientas (tiendaluvanabeauty.com)
+- `precios.html` — consulta de precios (tiendaluvanabeauty.com/precios)s (para clientas). Sin costos.
 - `admin.html` — administración privada: registrar ventas, inventario, historial y dashboard. Requiere iniciar sesión.
 - `config.js` — URL y clave pública (anon) de Supabase.
 - `supabase/schema.sql` — tablas, seguridad (RLS) y funciones de la base de datos.
@@ -13,7 +14,7 @@
 4. **Authentication → Users → Add user → Create new user**: tu mismo correo y una contraseña. Marca *Auto Confirm User*.
 5. **Authentication → Sign In / Providers**: desactiva **Allow new users to sign up** (así nadie más puede crear cuenta).
 6. **Project Settings → API**: copia *Project URL* y la clave *anon / publishable* en `config.js`. Nunca la clave *service_role / secret*.
-7. Abre `https://tiendaluvanabeauty.com/admin.html` e inicia sesión.
+7. Abre `https://tiendaluvanabeauty.com/admin` e inicia sesión.
 
 ## Seguridad
 
