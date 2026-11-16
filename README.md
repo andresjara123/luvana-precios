@@ -1,7 +1,7 @@
 # LUVANA Beauty & Care — precios, ventas e inventario
 
 - `index.html` — catálogo para clientas (tiendaluvanabeauty.com)
-- `precios.html` — consulta de precios (tiendaluvanabeauty.com/precios)s (para clientas). Sin costos.
+- `precios.html` — consulta de precios (tiendaluvanabeauty.com/precios). Sin costos.
 - `admin.html` — administración privada: registrar ventas, inventario, historial y dashboard. Requiere iniciar sesión.
 - `config.js` — URL y clave pública (anon) de Supabase.
 - `supabase/schema.sql` — tablas, seguridad (RLS) y funciones de la base de datos.
