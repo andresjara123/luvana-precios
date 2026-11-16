@@ -13,7 +13,7 @@
 4. **Authentication → Users → Add user → Create new user**: tu mismo correo y una contraseña. Marca *Auto Confirm User*.
 5. **Authentication → Sign In / Providers**: desactiva **Allow new users to sign up** (así nadie más puede crear cuenta).
 6. **Project Settings → API**: copia *Project URL* y la clave *anon / publishable* en `config.js`. Nunca la clave *service_role / secret*.
-7. Abre `https://andresjara123.github.io/luvana-precios/admin.html` e inicia sesión.
+7. Abre `https://tiendaluvanabeauty.com/admin.html` e inicia sesión.
 
 ## Seguridad
 
