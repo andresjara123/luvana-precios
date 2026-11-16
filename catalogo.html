@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUVANA Beauty & Care — Catálogo</title>
+<meta name="description" content="Catálogo de maquillaje y cuidado de la piel de LUVANA Beauty & Care. Tu belleza, tu esencia.">
+<meta property="og:title" content="LUVANA Beauty & Care — Catálogo">
+<meta property="og:description" content="Maquillaje y cuidado de la piel. Pide por WhatsApp.">
+<meta property="og:image" content="https://andresjara123.github.io/luvana-precios/img/logo.png">
+<link rel="icon" href="img/logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Montserrat:wght@400;500;600&display=swap">
+<style>
+:root{--pink:#F5B9B8;--blush:#FCE6E4;--gold:#BF886B;--goldText:#8C5E45;--ink:#2F2828;--ivory:#FFF8F5;--line:#F1DDD3;--wa:#1F7A4D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Arial,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+header{background:var(--pink);text-align:center;padding:14px 16px 10px}
+header img{height:120px;max-width:90%;object-fit:contain;display:block;margin:0 auto}
+.controls{position:sticky;top:0;z-index:5;background:rgba(255,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 14px}
+.controls .in{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.search{width:100%;min-height:44px;border-radius:22px;border:1px solid var(--line);padding:0 18px;font:inherit;font-size:16px;background:#fff;color:var(--ink);outline:none}
+.search:focus{border-color:var(--gold)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;min-height:36px;padding:0 16px;border-radius:18px;border:1px solid var(--ink);background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--ivory)}
+main{max-width:1000px;margin:0 auto;padding:14px 12px 120px}
+.count{font-size:13px;color:var(--goldText);margin:2px 4px 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.ph{position:relative;aspect-ratio:1/1;background:var(--blush);border:0;padding:0;cursor:zoom-in;display:block;width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .ini{font-family:'Cormorant Garamond',Georgia,serif;font-size:56px;color:var(--goldText);display:grid;place-items:center;height:100%}
+.badge{position:absolute;top:8px;left:8px;background:var(--ink);color:#FBE2C8;font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:4px 9px;border-radius:12px}
+.card.out .ph img{filter:grayscale(.6);opacity:.6}
+.info{padding:10px 12px 12px;display:flex;flex-direction:column;flex:1}
+.brand{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--goldText);font-weight:600}
+.name{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:600;line-height:1.15;margin:3px 0 8px;flex:1}
+.price{font-size:17px;font-weight:600;margin-bottom:8px}
+.add{width:100%;min-height:40px;border-radius:20px;border:1px solid var(--ink);background:var(--ink);color:var(--ivory);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.add:disabled{background:transparent;color:#9b8b8b;border-color:var(--line);cursor:default}
+.stepper{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--ink);border-radius:20px;min-height:40px;padding:0 4px}
+.stepper button{width:32px;height:32px;border-radius:16px;border:0;background:var(--blush);color:var(--ink);font-size:18px;cursor:pointer}
+.stepper span{font-weight:600}
+.empty{padding:40px 0;text-align:center;color:var(--goldText)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:var(--ivory);padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgba(47,40,40,.25);transform:translateY(110%);transition:transform .25s;z-index:10}
+.bar.show{transform:none}
+.bar .in{max-width:1000px;margin:0 auto}
+.bar .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar .tot small{display:block;font-size:12px;opacity:.75}
+.bar .tot b{font-size:19px;color:#FBE2C8}
+.bar .btns{display:flex;gap:8px}
+.bar .see{min-height:42px;padding:0 14px;border-radius:21px;border:1px solid var(--ivory);background:transparent;color:var(--ivory);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.wa{min-height:42px;padding:0 16px;border-radius:21px;background:var(--wa);color:#fff;text-decoration:none;font-weight:600;font-size:14px;display:inline-flex;align-items:center;white-space:nowrap}
+.panel{display:none;max-height:42vh;overflow:auto;margin-bottom:10px}
+.panel.open{display:block}
+.pline{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px;border-bottom:1px solid #4A3E3E;padding:8px 0}
+.pline .q{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.pline button{width:30px;height:30px;border-radius:15px;border:1px solid var(--ivory);background:transparent;color:var(--ivory);font-size:15px;cursor:pointer}
+.lb{position:fixed;inset:0;background:rgba(47,40,40,.88);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px;z-index:20}
+.lb.open{display:flex}
+.lb img{max-width:min(92vw,560px);max-height:70vh;border-radius:16px;background:#fff}
+.lb p{color:var(--ivory);margin:0;text-align:center}
+.lb button{min-height:44px;padding:0 22px;border-radius:22px;border:1px solid var(--ivory);background:transparent;color:var(--ivory);font:inherit;font-weight:600;cursor:pointer}
+footer{text-align:center;color:var(--goldText);font-size:13px;line-height:1.7;padding:10px 20px 0}
+footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:var(--ink)}
+@media (min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}}
+</style>
+</head>
+<body>
+<header>
+  <img src="img/logo.png" alt="LUVANA Beauty & Care">
+</header>
+<div class="controls"><div class="in">
+  <input class="search" id="q" type="search" placeholder="Buscar producto o marca…" aria-label="Buscar producto o marca">
+  <div class="chips" id="cats" role="group" aria-label="Categoría"></div>
+</div></div>
+<main>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+  <footer><div class="b">LUVANA Beauty &amp; Care</div>Elige tus productos y envía tu pedido por WhatsApp.<br>Precios en pesos colombianos, sujetos a disponibilidad.</footer>
+</main>
+<div class="bar" id="bar"><div class="in">
+  <div class="panel" id="panel"></div>
+  <div class="row">
+    <div class="tot"><small id="nsel"></small><b id="total">$0</b></div>
+    <div class="btns">
+      <button class="see" id="toggleP" type="button">Ver pedido</button>
+      <a class="wa" id="waBtn" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    </div>
+  </div>
+</div></div>
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Foto del producto"><img id="lbImg" alt=""><p id="lbCap"></p><button type="button" id="lbClose">Cerrar</button></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+// Lista de respaldo (se reemplaza con los datos en vivo de Supabase al cargar).
+let P = [{"n": "Mini contorno líquido 3D", "p": 7000, "u": 36, "m": "Karité", "cat": "Maquillaje", "f": "img/mini-contorno-liquido-3d.jpg"}, {"n": "Corrector de ojeras", "p": 8500, "u": 24, "m": "Romantic Rain", "cat": "Maquillaje", "f": "img/corrector-de-ojeras.jpg"}, {"n": "Polvo compacto control de grasa", "p": 16000, "u": 24, "m": "Karité", "cat": "Maquillaje", "f": "img/polvo-compacto-control-de-grasa.jpg"}, {"n": "Parches de colágeno para ojos con retinol", "p": 17000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/parches-de-colageno-para-ojos-con-retinol.jpg"}, {"n": "Parches de colágeno para ojos baba de caracol", "p": 19000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/parches-de-colageno-para-ojos-baba-de-caracol.jpg"}, {"n": "Bálsamo de labios Honey Peach", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje", "f": "img/balsamo-de-labios-honey-peach.jpg"}, {"n": "Bálsamo de labios Grapefruit", "p": 6000, "u": 2, "m": "Bioaqua", "cat": "Maquillaje", "f": "img/balsamo-de-labios-grapefruit.jpg"}, {"n": "Bálsamo de labios Honey Miel", "p": 5000, "u": 6, "m": "Bioaqua", "cat": "Maquillaje", "f": "img/balsamo-de-labios-honey-miel.jpg"}, {"n": "Rubor líquido Rose Touch", "p": 14000, "u": 12, "m": "Kiss Beauty", "cat": "Maquillaje", "f": "img/rubor-liquido-rose-touch.jpg"}, {"n": "Rubor compacto", "p": 8000, "u": 12, "m": "Blush Powder", "cat": "Maquillaje", "f": "img/rubor-compacto.jpg"}, {"n": "Set de diademas para skincare + muñequeras", "p": 17000, "u": 6, "m": "Genérico", "cat": "Accesorio", "f": "img/set-de-diademas-para-skincare-munequeras.jpg"}, {"n": "Base BB Cream Perfect Cover", "p": 8000, "u": 12, "m": "Chanleevi", "cat": "Maquillaje", "f": "img/base-bb-cream-perfect-cover.jpg"}, {"n": "Balaca de maquillaje", "p": 8000, "u": 5, "m": "Genérico", "cat": "Accesorio", "f": "img/balaca-de-maquillaje.jpg"}, {"n": "Mascarilla velo facial", "p": 2000, "u": 30, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/mascarilla-velo-facial.jpg"}, {"n": "Lápiz de cejas 2 en 1 con cepillo", "p": 5000, "u": 6, "m": "Mila", "cat": "Maquillaje", "f": "img/lapiz-de-cejas-2-en-1-con-cepillo.jpg"}, {"n": "Lápiz delineador de labios", "p": 3000, "u": 10, "m": "Pink Key", "cat": "Maquillaje", "f": "img/lapiz-delineador-de-labios.jpg"}, {"n": "Pestañina Sky High", "p": 8000, "u": 6, "m": "Meike Glamour", "cat": "Maquillaje", "f": "img/pestanina-sky-high.jpg"}, {"n": "Fijador de maquillaje", "p": 15000, "u": 17, "m": "Billion Beauty", "cat": "Maquillaje", "f": "img/fijador-de-maquillaje.jpg"}, {"n": "Labial en barra con aceite de almendras", "p": 6000, "u": 23, "m": "Gul Flower", "cat": "Maquillaje", "f": "img/labial-en-barra-con-aceite-de-almendras.jpg"}, {"n": "Tinta de labios con moño", "p": 8000, "u": 24, "m": "Meike Glamour", "cat": "Maquillaje", "f": "img/tinta-de-labios-con-mono.jpg"}, {"n": "Set x3 de beauty blender", "p": 10000, "u": 5, "m": "Auty", "cat": "Maquillaje", "f": "img/set-x3-de-beauty-blender.jpg"}, {"n": "Kit de sérums antiedad", "p": 29000, "u": 3, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": "img/kit-de-serums-antiedad.jpg"}, {"n": "Tónico facial hidratante de rosas", "p": 15000, "u": 8, "m": "Paulis", "cat": "Cuidado de la piel", "f": "img/tonico-facial-hidratante-de-rosas.jpg"}, {"n": "Cosmetiquera pequeña con cierre", "p": 15000, "u": 9, "m": "Genérico", "cat": "Accesorio", "f": "img/cosmetiquera-pequena-con-cierre.jpg"}, {"n": "Cosmetiquera Beautiful Secret", "p": 20000, "u": 1, "m": "Genérico", "cat": "Accesorio", "f": null}, {"n": "Parches anti acné de figuras", "p": 7000, "u": 3, "m": "Hanel", "cat": "Cuidado de la piel", "f": null}, {"n": "Parches anti acné invisibles", "p": 9000, "u": 7, "m": "Sadoer", "cat": "Cuidado de la piel", "f": "img/parches-anti-acne-invisibles.jpg"}, {"n": "Combo recargado retinol", "p": 55000, "u": 2, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo recargado ácido hialurónico", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo recargado centella", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}, {"n": "Combo x4 de niacinamida", "p": 55000, "u": 1, "m": "Bioaqua", "cat": "Cuidado de la piel", "f": null}];
+const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
+const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const $ = id => document.getElementById(id);
+let cat = 'Todo', cart = {};
+const key = p => p.id != null ? 'id' + p.id : p.n;
+const byKey = k => P.find(p => key(p) === k);
+
+function cats(){
+  const order = ['Maquillaje','Cuidado de la piel','Accesorio'];
+  const found = [...new Set(P.map(p => p.cat).filter(Boolean))].sort((a,b)=>{const i=order.indexOf(a),j=order.indexOf(b);return (i<0?99:i)-(j<0?99:j)||a.localeCompare(b,'es');});
+  return ['Todo', ...found];
+}
+function renderCats(){
+  const c = cats(); if(!c.includes(cat)) cat = 'Todo';
+  $('cats').innerHTML = '';
+  c.forEach(x => { const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent = x==='Accesorio'?'Accesorios':x; b.setAttribute('aria-pressed', x===cat); b.onclick=()=>{cat=x;renderCats();render();}; $('cats').appendChild(b); });
+}
+function render(){
+  const q = norm($('q').value.trim());
+  const rows = P.filter(p => (cat==='Todo'||p.cat===cat) && (!q || norm(p.n+' '+p.m+' '+p.cat).includes(q)))
+    .sort((a,b) => ((a.u<=0)-(b.u<=0)) || a.n.localeCompare(b.n,'es'));
+  $('count').textContent = rows.length + (rows.length===1?' producto':' productos');
+  const g = $('grid'); g.innerHTML = '';
+  if(!rows.length){ g.innerHTML = '<div class="empty">No encontramos productos con esa búsqueda.</div>'; return; }
+  rows.forEach(p => {
+    const k = key(p), out = p.u <= 0, inCart = cart[k] || 0;
+    const d = document.createElement('div'); d.className = 'card' + (out ? ' out' : '');
+    d.innerHTML = '<button type="button" class="ph"></button><div class="info"><div class="brand"></div><div class="name"></div><div class="price"></div><div class="act"></div></div>';
+    const ph = d.querySelector('.ph');
+    if(p.f){ const im=document.createElement('img'); im.loading='lazy'; im.src=p.f; im.alt=p.n; ph.appendChild(im); ph.setAttribute('aria-label','Ver foto de '+p.n);
+      ph.onclick=()=>{ $('lbImg').src=p.f; $('lbImg').alt=p.n; $('lbCap').textContent=p.n+' · '+fmt(p.p); $('lb').classList.add('open'); }; }
+    else { ph.innerHTML='<div class="ini"></div>'; ph.querySelector('.ini').textContent=p.n.charAt(0); ph.style.cursor='default'; ph.tabIndex=-1; }
+    if(out || (p.u <= 3)){ const b=document.createElement('span'); b.className='badge'; b.textContent = out ? 'Agotado' : 'Últimas unidades'; ph.appendChild(b); }
+    d.querySelector('.brand').textContent = p.m || '';
+    d.querySelector('.name').textContent = p.n;
+    d.querySelector('.price').textContent = fmt(p.p);
+    const act = d.querySelector('.act');
+    if(inCart){
+      act.innerHTML = '<div class="stepper"><button type="button" class="m" aria-label="Quitar uno">−</button><span></span><button type="button" class="pl" aria-label="Agregar uno">+</button></div>';
+      act.querySelector('span').textContent = inCart;
+      act.querySelector('.m').onclick = () => change(k,-1);
+      act.querySelector('.pl').onclick = () => change(k,1);
+    } else {
+      const b=document.createElement('button'); b.type='button'; b.className='add';
+      b.textContent = out ? 'Agotado' : 'Agregar'; b.disabled = out;
+      b.onclick = () => change(k,1); act.appendChild(b);
+    }
+    g.appendChild(d);
+  });
+}
+function change(k, d){
+  const p = byKey(k); if(!p) return;
+  const n = (cart[k]||0) + d;
+  if(n <= 0) delete cart[k]; else cart[k] = Math.min(n, Math.max(p.u, 1));
+  try { localStorage.setItem('luvana-cart', JSON.stringify(cart)); } catch(e){}
+  render(); renderBar();
+}
+function msg(){
+  let t = '¡Hola LUVANA! Quiero hacer este pedido:\n\n', tot = 0;
+  Object.keys(cart).forEach(k => { const p=byKey(k), q=cart[k]; if(!p) return; tot += p.p*q; t += '• ' + p.n + (p.m?' ('+p.m+')':'') + (q>1?' x'+q:'') + ' — ' + fmt(p.p*q) + '\n'; });
+  return t + '\nTotal: ' + fmt(tot);
+}
+function renderBar(){
+  Object.keys(cart).forEach(k => { if(!byKey(k)) delete cart[k]; });
+  const ks = Object.keys(cart); let n=0, tot=0;
+  const panel = $('panel'); panel.innerHTML = '';
+  ks.forEach(k => { const p=byKey(k), q=cart[k]; n+=q; tot+=p.p*q;
+    const l=document.createElement('div'); l.className='pline';
+    l.innerHTML='<span class="pn"></span><span class="q"><button type="button" class="m" aria-label="Quitar uno">−</button><span class="qv"></span><button type="button" class="pl" aria-label="Agregar uno">+</button><span class="pt"></span></span>';
+    l.querySelector('.pn').textContent=p.n; l.querySelector('.qv').textContent=q; l.querySelector('.pt').textContent=fmt(p.p*q);
+    l.querySelector('.m').onclick=()=>change(k,-1); l.querySelector('.pl').onclick=()=>change(k,1);
+    panel.appendChild(l);
+  });
+  $('bar').classList.toggle('show', n>0);
+  if(!n){ panel.classList.remove('open'); $('toggleP').textContent='Ver pedido'; }
+  $('nsel').textContent = n + (n===1?' producto':' productos');
+  $('total').textContent = fmt(tot);
+  const num = String((window.LUVANA_CONFIG||{}).whatsapp||'').replace(/\D/g,'');
+  $('waBtn').href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg());
+}
+$('toggleP').onclick = () => { const o=$('panel').classList.toggle('open'); $('toggleP').textContent = o ? 'Ocultar' : 'Ver pedido'; };
+$('q').oninput = render;
+$('lbClose').onclick = () => $('lb').classList.remove('open');
+$('lb').onclick = e => { if(e.target.id==='lb') $('lb').classList.remove('open'); };
+document.addEventListener('keydown', e => { if(e.key==='Escape') $('lb').classList.remove('open'); });
+
+function start(){ try { cart = JSON.parse(localStorage.getItem('luvana-cart')||'{}')||{}; } catch(e){ cart={}; } renderCats(); render(); renderBar(); }
+start();
+// Productos, precios y disponibilidad en vivo desde Supabase (vista sin costos).
+(async () => {
+  const cfg = window.LUVANA_CONFIG || {};
+  if(!cfg.url || !cfg.anonKey || !window.supabase) return;
+  try {
+    const sb = window.supabase.createClient(cfg.url, cfg.anonKey);
+    const { data, error } = await sb.from('productos_publicos').select('*').order('nombre');
+    if(error || !data || !data.length) return;
+    P = data.map(r => ({ id:r.id, n:r.nombre, p:r.precio, u:r.stock, m:r.marca||'', cat:r.categoria, f:r.foto }));
+    start();
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
