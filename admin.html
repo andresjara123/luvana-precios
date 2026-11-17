@@ -71,6 +71,15 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .venta.anulada{opacity:.55}
 .venta .h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px}
 .venta ul{margin:6px 0 0;padding-left:18px;font-size:13px}
+.thumbbtn{border:0;padding:0;background:none;cursor:pointer;border-radius:10px}
+.pcell{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.link{border:0;background:none;padding:0;color:var(--goldText);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer}
+.modal{position:fixed;inset:0;background:rgba(47,40,40,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
+.modal .box{background:#fff;border-radius:18px;padding:18px;width:100%;max-width:440px;max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.fotoPrev{width:100%;aspect-ratio:1/1;border-radius:14px;background:var(--blush);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Cormorant Garamond',serif;font-size:64px;color:var(--goldText)}
+.fotoPrev img{width:100%;height:100%;object-fit:cover;display:block}
+.fileBtn{position:relative;overflow:hidden;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px}
+.fileBtn input{position:absolute;inset:0;opacity:0;cursor:pointer;min-height:0}
 </style>
 </head>
 <body>
@@ -193,6 +202,24 @@ td.num,th.num{text-align:right;white-space:nowrap}
 <footer style="padding:20px 16px 0"><div class="credit" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--goldText);text-align:center;line-height:1.7">By Diana Acosta<br>Desarrollado por Andrés Jaramillo</div></footer>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="modal hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="box">
+    <h2 id="editTitle">Editar producto</h2>
+    <div class="fotoPrev" id="ePrev"></div>
+    <div class="row">
+      <label class="btn fileBtn">Subir foto<input type="file" id="eFile" accept="image/*"></label>
+      <button class="btn" type="button" id="eQuitar">Quitar foto</button>
+    </div>
+    <p class="muted" style="margin:0">La foto se recorta cuadrada desde el centro.</p>
+    <label>Nombre<input id="eNombre" required></label>
+    <label>Marca<input id="eMarca"></label>
+    <label>Categoría<select id="eCat"></select></label>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button" id="eCancelar">Cancelar</button>
+      <button class="btn dark" type="button" id="eGuardar">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -351,14 +378,15 @@ function renderInventario(){
   t.innerHTML = '<tr><th></th><th>Producto</th><th class="num">Precio</th><th class="num">Costo</th><th class="num">Unidades</th><th>Activo</th><th></th></tr>';
   rows.forEach(p => {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td>'+thumbHtml(p)+'</td><td><div class="pn">'+esc(p.nombre)+'</div><div class="pm">'+esc(p.marca||'')+' · '+esc(p.categoria)+'</div></td>'
+    tr.innerHTML = '<td><button type="button" class="thumbbtn ed" aria-label="Editar '+esc(p.nombre)+'">'+thumbHtml(p)+'</button></td><td><div class="pcell"><div class="pn">'+esc(p.nombre)+'</div><div class="pm">'+esc(p.marca||'')+' · '+esc(p.categoria)+'</div><button type="button" class="link ed">Editar</button></div></td>'
       + '<td class="num"><input type="number" min="0" class="ip" aria-label="Precio de '+esc(p.nombre)+'"></td>'
       + '<td class="num"><input type="number" min="0" class="ic" aria-label="Costo de '+esc(p.nombre)+'"></td>'
       + '<td class="num"><input type="number" min="0" class="is" aria-label="Unidades de '+esc(p.nombre)+'"></td>'
       + '<td><input type="checkbox" class="ia" style="width:22px;min-height:22px" aria-label="Activo"></td>'
       + '<td><button class="btn small" type="button">Guardar</button></td>';
     tr.querySelector('.ip').value = p.precio; tr.querySelector('.ic').value = p.costo; tr.querySelector('.is').value = p.stock; tr.querySelector('.ia').checked = p.activo;
-    tr.querySelector('button').onclick = async () => {
+    tr.querySelectorAll('.ed').forEach(b => b.onclick = () => abrirEditor(p));
+    tr.querySelector('button.btn.small').onclick = async () => {
       const upd = { precio:+tr.querySelector('.ip').value, costo:+tr.querySelector('.ic').value, stock:+tr.querySelector('.is').value, activo:tr.querySelector('.ia').checked, actualizado:new Date().toISOString() };
       if([upd.precio,upd.costo,upd.stock].some(n => !Number.isFinite(n) || n<0)) return toast('Revisa los números', true);
       const { error } = await sb.from('productos').update(upd).eq('id', p.id);
@@ -368,6 +396,78 @@ function renderInventario(){
     t.appendChild(tr);
   });
 }
+// ---------- editar nombre, marca, categoría y foto
+const CATEGORIAS = ['Maquillaje','Cuidado de la piel','Accesorio'];
+let editP = null, editBlob = null, editQuitar = false, editUrl = null;
+function prevFoto(src){
+  const el = $('ePrev'); el.innerHTML = '';
+  if(src){ const im = document.createElement('img'); im.src = src; im.alt = ''; el.appendChild(im); }
+  else el.textContent = ($('eNombre').value || editP.nombre || '?').charAt(0);
+}
+function abrirEditor(p){
+  editP = p; editBlob = null; editQuitar = false;
+  if(editUrl){ URL.revokeObjectURL(editUrl); editUrl = null; }
+  $('eNombre').value = p.nombre; $('eMarca').value = p.marca || '';
+  const cats = CATEGORIAS.includes(p.categoria) ? CATEGORIAS : [...CATEGORIAS, p.categoria];
+  $('eCat').innerHTML = cats.map(c => '<option>'+esc(c)+'</option>').join(''); $('eCat').value = p.categoria;
+  $('eFile').value = ''; prevFoto(p.foto);
+  show('editModal', true); $('eNombre').focus();
+}
+function cerrarEditor(){ show('editModal', false); editP = null; editBlob = null; if(editUrl){ URL.revokeObjectURL(editUrl); editUrl = null; } }
+// Recorta cuadrada desde el centro y la deja en 800×800 JPG (liviana para el catálogo).
+function prepararFoto(file){
+  return new Promise((ok, fail) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const lado = Math.min(im.naturalWidth, im.naturalHeight), t = Math.min(800, lado);
+      const c = document.createElement('canvas'); c.width = c.height = t;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, t, t);
+      x.drawImage(im, (im.naturalWidth-lado)/2, (im.naturalHeight-lado)/2, lado, lado, 0, 0, t, t);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? ok(b) : fail(new Error('No se pudo procesar la foto')), 'image/jpeg', 0.85);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); fail(new Error('Ese archivo no es una imagen válida')); };
+    im.src = url;
+  });
+}
+const RUTA_FOTOS = '/storage/v1/object/public/fotos/';
+async function guardarEdicion(){
+  const p = editP; if(!p) return;
+  const upd = { nombre:$('eNombre').value.trim(), marca:$('eMarca').value.trim() || null, categoria:$('eCat').value, actualizado:new Date().toISOString() };
+  if(!upd.nombre) return toast('El nombre no puede quedar vacío', true);
+  const btn = $('eGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    if(editBlob){
+      const ruta = 'producto-' + p.id + '-' + Date.now() + '.jpg';
+      const { error } = await sb.storage.from('fotos').upload(ruta, editBlob, { contentType:'image/jpeg', cacheControl:'31536000' });
+      if(error) throw new Error('No se pudo subir la foto: ' + error.message + (/bucket/i.test(error.message) ? ' (¿ya ejecutaste supabase/fotos.sql?)' : ''));
+      upd.foto = sb.storage.from('fotos').getPublicUrl(ruta).data.publicUrl;
+    } else if(editQuitar) upd.foto = null;
+    const anterior = p.foto;
+    const { error } = await sb.from('productos').update(upd).eq('id', p.id);
+    if(error) throw new Error(error.message);
+    // Borra la foto vieja si estaba en Supabase y se reemplazó.
+    if('foto' in upd && anterior && anterior.includes(RUTA_FOTOS)){
+      try { await sb.storage.from('fotos').remove([decodeURIComponent(anterior.split(RUTA_FOTOS)[1].split('?')[0])]); } catch(_){}
+    }
+    Object.assign(p, upd); toast('Guardado: ' + p.nombre); cerrarEditor(); renderInventario();
+  } catch(e){ toast(e.message, true); }
+  finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+}
+$('eFile').onchange = async () => {
+  const f = $('eFile').files[0]; if(!f) return;
+  try {
+    editBlob = await prepararFoto(f); editQuitar = false;
+    if(editUrl) URL.revokeObjectURL(editUrl);
+    editUrl = URL.createObjectURL(editBlob); prevFoto(editUrl);
+  } catch(e){ toast(e.message, true); }
+};
+$('eQuitar').onclick = () => { editBlob = null; editQuitar = true; $('eFile').value = ''; prevFoto(null); };
+$('eCancelar').onclick = cerrarEditor;
+$('eGuardar').onclick = guardarEdicion;
+$('editModal').onclick = e => { if(e.target.id === 'editModal') cerrarEditor(); };
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && editP) cerrarEditor(); });
+
 async function agregarProducto(e){
   e.preventDefault();
   const n = { nombre:$('nNombre').value.trim(), marca:$('nMarca').value.trim()||null, categoria:$('nCat').value, precio:+$('nPrecio').value, costo:+$('nCosto').value, stock:+$('nStock').value };

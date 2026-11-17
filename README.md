@@ -5,6 +5,7 @@
 - `admin.html` — administración privada: registrar ventas, inventario, historial y dashboard. Requiere iniciar sesión.
 - `config.js` — URL y clave pública (anon) de Supabase.
 - `supabase/schema.sql` — tablas, seguridad (RLS) y funciones de la base de datos.
+- `supabase/fotos.sql` — carpeta pública de fotos de productos (solo administradoras pueden subir).
 
 ## Puesta en marcha (una sola vez)
 
@@ -15,6 +16,7 @@
 5. **Authentication → Sign In / Providers**: desactiva **Allow new users to sign up** (así nadie más puede crear cuenta).
 6. **Project Settings → API**: copia *Project URL* y la clave *anon / publishable* en `config.js`. Nunca la clave *service_role / secret*.
 7. Abre `https://tiendaluvanabeauty.com/admin` e inicia sesión.
+8. **SQL Editor → New query**: pegar `supabase/fotos.sql` y **Run**. Crea la carpeta de fotos para poder subirlas desde *Inventario → Editar*.
 
 ## Seguridad
 
