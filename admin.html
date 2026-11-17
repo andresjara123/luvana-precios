@@ -166,7 +166,6 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
           <label>Celular de la clienta (opcional)<input id="cCel" inputmode="tel" placeholder="3001234567 — para abrir su chat directo"></label>
         </div>
         <div id="quote" style="margin-top:8px"></div>
-        <label style="margin-top:10px">Descuento en pesos (opcional)<input id="cDesc" type="number" min="0" step="500" placeholder="0"></label>
         <div class="qsum" id="qsum"></div>
         <div class="row">
           <button class="btn" id="cCopy" type="button">Copiar cotización</button>
@@ -364,7 +363,7 @@ function lineasCot(){ return Object.entries(quote).map(([id,q]) => ({ p: product
 function totalesCot(){
   const ls = lineasCot();
   const sub = ls.reduce((a,l)=>a+l.p.precio*l.q,0), costo = ls.reduce((a,l)=>a+l.p.costo*l.q,0);
-  const desc = Math.min(Math.max(+$('cDesc').value || 0, 0), sub);
+  const desc = 0; // sin descuentos por ahora
   return { ls, sub, desc, total: sub-desc, costo, gan: sub-desc-costo };
 }
 function msgCot(){
@@ -423,7 +422,7 @@ function cotizacionAVenta(){
   cart = {}; t.ls.forEach(l => cart[l.p.id] = l.q);
   $('cliente').value = [$('cCliente').value.trim(), $('cCel').value.trim()].filter(Boolean).join(' · ');
   $('notas').value = t.desc ? 'Cotización con descuento de '+fmt(t.desc)+' (total acordado '+fmt(t.total)+')' : '';
-  quote = {}; guardarCot(); $('cDesc').value = '';
+  quote = {}; guardarCot();
   abrir('vender'); toast('Cotización pasada a Vender: revisa y registra la venta');
 }
 
@@ -643,11 +642,11 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('vperiodo').onchange = renderVentas;
   $('newForm').onsubmit = agregarProducto;
   $('cq').oninput = renderCotizarLista; $('ccat').onchange = renderCotizarLista;
-  $('cDesc').oninput = renderCot; $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
+  $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
   $('cCopy').onclick = () => { const m = msgCot(); if(!m) return toast('La cotización está vacía', true); copiar(m); };
   $('cWa').onclick = e => { if(!msgCot()){ e.preventDefault(); toast('La cotización está vacía', true); } };
   $('cVender').onclick = cotizacionAVenta;
-  $('cClear').onclick = () => { quote = {}; guardarCot(); $('cDesc').value=''; renderCot(); renderCotizarLista(); };
+  $('cClear').onclick = () => { quote = {}; guardarCot(); renderCot(); renderCotizarLista(); };
 }
 </script>
 </body>
