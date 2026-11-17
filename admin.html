@@ -342,7 +342,7 @@ async function registrar(){
   await cargarProductos(); renderVender(); renderCart();
 }
 
-// ---------- COTIZAR (mismos mensajes que /precios, con control de stock y ganancia)
+// ---------- COTIZAR (mensajes de cotización, con control de stock y ganancia)
 let quote = {};
 try { quote = JSON.parse(localStorage.getItem('luvana-cotizacion') || '{}') || {}; } catch(e){ quote = {}; }
 function guardarCot(){ try { localStorage.setItem('luvana-cotizacion', JSON.stringify(quote)); } catch(e){} }
