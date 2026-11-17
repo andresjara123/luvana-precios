@@ -84,6 +84,13 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .fotoPrev img{width:100%;height:100%;object-fit:cover;display:block}
 .fileBtn{position:relative;overflow:hidden;display:inline-flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px}
 .fileBtn input{position:absolute;inset:0;opacity:0;cursor:pointer;min-height:0}
+.qrow{display:grid;grid-template-columns:52px 1fr auto;gap:6px 10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fff}
+.qrow .acts{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:6px}
+.qrow .priv{font-size:12px;color:#6B5A55}
+.qsum{display:flex;flex-direction:column;gap:4px;font-size:14px;margin:10px 0;padding:10px 12px;background:var(--blush);border-radius:12px}
+.qsum div{display:flex;justify-content:space-between;gap:10px}
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
 </style>
 </head>
 <body>
@@ -94,6 +101,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
   </div>
   <nav id="tabs" class="hidden" role="tablist" aria-label="Secciones">
     <button type="button" role="tab" data-tab="vender" aria-selected="true">Vender</button>
+    <button type="button" role="tab" data-tab="cotizar" aria-selected="false">Cotizar</button>
     <button type="button" role="tab" data-tab="dashboard" aria-selected="false">Dashboard</button>
     <button type="button" role="tab" data-tab="ventas" aria-selected="false">Ventas</button>
     <button type="button" role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
@@ -136,6 +144,37 @@ td.num,th.num{text-align:right;white-space:nowrap}
           <button class="btn dark" id="registrar" type="button">Registrar venta</button>
           <button class="btn" id="vaciar" type="button">Vaciar</button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COTIZAR -->
+  <section id="tab-cotizar" class="sec hidden">
+    <div class="grid2">
+      <div class="card">
+        <h2>Productos</h2>
+        <div class="row" style="margin-top:10px">
+          <input type="search" id="cq" placeholder="Buscar producto o marca…" aria-label="Buscar producto para cotizar" style="flex:2 1 220px">
+          <select id="ccat" aria-label="Categoría" style="flex:1 1 150px"><option value="">Todas las categorías</option><option>Maquillaje</option><option>Cuidado de la piel</option><option>Accesorio</option></select>
+        </div>
+        <div class="plist" id="clist"></div>
+      </div>
+      <div class="card">
+        <h2>Cotización</h2>
+        <div class="form" style="margin-top:8px">
+          <label>Cliente (opcional)<input id="cCliente" placeholder="Nombre para el saludo"></label>
+          <label>Celular de la clienta (opcional)<input id="cCel" inputmode="tel" placeholder="3001234567 — para abrir su chat directo"></label>
+        </div>
+        <div id="quote" style="margin-top:8px"></div>
+        <label style="margin-top:10px">Descuento en pesos (opcional)<input id="cDesc" type="number" min="0" step="500" placeholder="0"></label>
+        <div class="qsum" id="qsum"></div>
+        <div class="row">
+          <button class="btn" id="cCopy" type="button">Copiar cotización</button>
+          <a class="btn wa" id="cWa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          <button class="btn dark" id="cVender" type="button">Convertir en venta</button>
+          <button class="btn" id="cClear" type="button">Vaciar</button>
+        </div>
+        <p class="muted" style="margin:10px 0 0">El costo y la ganancia solo los ves tú; no van en el mensaje.</p>
       </div>
     </div>
   </section>
@@ -302,6 +341,90 @@ async function registrar(){
   toast('Venta #'+data+' registrada');
   cart = {}; $('cliente').value=''; $('notas').value='';
   await cargarProductos(); renderVender(); renderCart();
+}
+
+// ---------- COTIZAR (mismos mensajes que /precios, con control de stock y ganancia)
+let quote = {};
+try { quote = JSON.parse(localStorage.getItem('luvana-cotizacion') || '{}') || {}; } catch(e){ quote = {}; }
+function guardarCot(){ try { localStorage.setItem('luvana-cotizacion', JSON.stringify(quote)); } catch(e){} }
+async function copiar(text){
+  try { await navigator.clipboard.writeText(text); toast('Mensaje copiado'); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Mensaje copiado'); }catch(_){ toast('No se pudo copiar', true); } ta.remove(); }
+}
+function waLink(text){
+  let cel = ($('cCel').value || '').replace(/\D/g, '');
+  if(cel.length === 10) cel = '57' + cel;
+  return 'https://wa.me/' + (cel.length >= 11 ? cel : '') + '?text=' + encodeURIComponent(text);
+}
+function saludo(){ const n = $('cCliente').value.trim(); return n ? 'Hola ' + n : 'Hola'; }
+function msgUno(p){
+  return saludo() + ', te comparto este producto de LUVANA Beauty & Care:\n\n' + p.nombre + (p.marca ? ' (' + p.marca + ')' : '') + '\nPrecio: ' + fmt(p.precio) + '\n\n¿Te lo aparto? Tu belleza, tu esencia.';
+}
+function lineasCot(){ return Object.entries(quote).map(([id,q]) => ({ p: productos.find(x => x.id == id), q })).filter(l => l.p); }
+function totalesCot(){
+  const ls = lineasCot();
+  const sub = ls.reduce((a,l)=>a+l.p.precio*l.q,0), costo = ls.reduce((a,l)=>a+l.p.costo*l.q,0);
+  const desc = Math.min(Math.max(+$('cDesc').value || 0, 0), sub);
+  return { ls, sub, desc, total: sub-desc, costo, gan: sub-desc-costo };
+}
+function msgCot(){
+  const t = totalesCot(); if(!t.ls.length) return '';
+  let m = saludo() + ', esta es tu cotización de LUVANA Beauty & Care:\n\n';
+  t.ls.forEach(l => { m += '• ' + l.p.nombre + (l.q>1 ? ' x' + l.q : '') + ' — ' + fmt(l.p.precio*l.q) + '\n'; });
+  if(t.desc) m += '\nSubtotal: ' + fmt(t.sub) + '\nDescuento: -' + fmt(t.desc);
+  return m + '\nTotal: ' + fmt(t.total) + '\n\n¿Te lo aparto? Tu belleza, tu esencia.';
+}
+function renderCotizarLista(){
+  const q = norm($('cq').value.trim()), cat = $('ccat').value;
+  const list = $('clist'); list.innerHTML = '';
+  const rows = productos.filter(p => p.activo && (!cat || p.categoria === cat) && (!q || norm(p.nombre+' '+(p.marca||'')+' '+p.categoria).includes(q)));
+  if(!rows.length){ list.innerHTML = '<p class="muted">No encontré productos con esa búsqueda.</p>'; return; }
+  rows.forEach(p => {
+    const enCot = quote[p.id] || 0, gan = p.precio - p.costo, mg = p.precio ? Math.round(gan/p.precio*100) : 0;
+    const d = document.createElement('div'); d.className = 'qrow';
+    d.innerHTML = thumbHtml(p) + '<div><div class="pn">'+esc(p.nombre)+'</div><div class="pm">'+esc(p.marca||'')+' · '+(p.stock<=0?'<span class="pill red">Agotado</span>':p.stock+' disponibles'+(p.stock<=3?' <span class="pill">Últimas unidades</span>':''))+'</div><div class="priv">Costo '+fmt(p.costo)+' · ganas '+fmt(gan)+' ('+mg+'%)</div></div><div class="pp">'+fmt(p.precio)+'</div>'
+      + '<div class="acts"><button class="btn small dark" type="button"></button><button class="btn small" type="button">Copiar</button><a class="btn small wa" target="_blank" rel="noopener">WhatsApp</a></div>';
+    const [add, cp] = d.querySelectorAll('.acts button'), w = d.querySelector('.acts a');
+    add.textContent = enCot ? 'En la cotización ('+enCot+') +' : 'Agregar';
+    add.setAttribute('aria-label', 'Agregar '+p.nombre+' a la cotización');
+    add.disabled = enCot >= p.stock;
+    add.onclick = () => { quote[p.id] = (quote[p.id]||0) + 1; guardarCot(); renderCotizarLista(); renderCot(); };
+    cp.onclick = () => copiar(msgUno(p));
+    w.href = waLink(msgUno(p));
+    list.appendChild(d);
+  });
+}
+function renderCot(){
+  const box = $('quote'); box.innerHTML = '';
+  // limpia productos que ya no existen o están inactivos
+  Object.keys(quote).forEach(id => { const p = productos.find(x => x.id == id); if(!p || !p.activo) delete quote[id]; });
+  const t = totalesCot();
+  if(!t.ls.length) box.innerHTML = '<p class="muted">Agrega productos desde la lista.</p>';
+  t.ls.forEach(({p,q}) => {
+    const l = document.createElement('div'); l.className = 'cartline';
+    l.innerHTML = '<span>'+esc(p.nombre)+(q>p.stock?' <span class="pill red">Solo hay '+p.stock+'</span>':'')+'</span><span class="qty"><button type="button" aria-label="Quitar uno">−</button><b>'+q+'</b><button type="button" aria-label="Agregar uno">+</button><span style="min-width:80px;text-align:right">'+fmt(p.precio*q)+'</span></span>';
+    const [m, pl] = l.querySelectorAll('button');
+    m.onclick = () => { quote[p.id]--; if(quote[p.id]<=0) delete quote[p.id]; guardarCot(); renderCot(); renderCotizarLista(); };
+    pl.onclick = () => { if(quote[p.id] >= p.stock) return toast('No hay más unidades de '+p.nombre, true); quote[p.id]++; guardarCot(); renderCot(); renderCotizarLista(); };
+    box.appendChild(l);
+  });
+  const mg = t.total ? Math.round(t.gan/t.total*100) : 0;
+  $('qsum').innerHTML = '<div><span>Subtotal</span><b>'+fmt(t.sub)+'</b></div>' + (t.desc ? '<div><span>Descuento</span><b>-'+fmt(t.desc)+'</b></div>' : '')
+    + '<div style="font-size:17px"><span>Total para la clienta</span><b>'+fmt(t.total)+'</b></div>'
+    + '<div class="muted"><span>Tu costo · tu ganancia</span><span>'+fmt(t.costo)+' · '+fmt(t.gan)+' ('+mg+'%)</span></div>';
+  const msg = msgCot();
+  $('cWa').href = msg ? waLink(msg) : '#';
+  $('cCopy').disabled = $('cVender').disabled = !t.ls.length;
+}
+function cotizacionAVenta(){
+  const t = totalesCot(); if(!t.ls.length) return;
+  const falta = t.ls.find(l => l.q > l.p.stock);
+  if(falta) return toast('No hay suficientes unidades de '+falta.p.nombre, true);
+  cart = {}; t.ls.forEach(l => cart[l.p.id] = l.q);
+  $('cliente').value = [$('cCliente').value.trim(), $('cCel').value.trim()].filter(Boolean).join(' · ');
+  $('notas').value = t.desc ? 'Cotización con descuento de '+fmt(t.desc)+' (total acordado '+fmt(t.total)+')' : '';
+  quote = {}; guardarCot(); $('cDesc').value = '';
+  abrir('vender'); toast('Cotización pasada a Vender: revisa y registra la venta');
 }
 
 // ---------- DASHBOARD
@@ -485,14 +608,15 @@ async function agregarProducto(e){
 async function abrir(t){
   tab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===t));
-  ['vender','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, x===t));
+  ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, x===t));
   if(t==='vender'){ await cargarProductos(); renderVender(); renderCart(); }
+  if(t==='cotizar'){ await cargarProductos(); renderCotizarLista(); renderCot(); }
   if(t==='dashboard') await renderDashboard();
   if(t==='ventas') await renderVentas();
   if(t==='inventario'){ await cargarProductos(); renderInventario(); }
 }
 async function entrar(session){
-  if(!session){ show('login', true); show('tabs', false); show('who', false); ['vender','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, false)); return; }
+  if(!session){ show('login', true); show('tabs', false); show('who', false); ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, false)); return; }
   const { data: admin } = await sb.rpc('es_admin');
   if(!admin){ $('loginErr').textContent = 'Este correo no está autorizado como administradora (revisa la tabla admins).'; await sb.auth.signOut(); return; }
   show('login', false); show('tabs', true); show('who', true);
@@ -518,6 +642,12 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('periodo').onchange = renderDashboard; $('refrescar').onclick = renderDashboard;
   $('vperiodo').onchange = renderVentas;
   $('newForm').onsubmit = agregarProducto;
+  $('cq').oninput = renderCotizarLista; $('ccat').onchange = renderCotizarLista;
+  $('cDesc').oninput = renderCot; $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
+  $('cCopy').onclick = () => { const m = msgCot(); if(!m) return toast('La cotización está vacía', true); copiar(m); };
+  $('cWa').onclick = e => { if(!msgCot()){ e.preventDefault(); toast('La cotización está vacía', true); } };
+  $('cVender').onclick = cotizacionAVenta;
+  $('cClear').onclick = () => { quote = {}; guardarCot(); $('cDesc').value=''; renderCot(); renderCotizarLista(); };
 }
 </script>
 </body>
