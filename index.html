@@ -18,8 +18,59 @@
 :root{--pink:#FCE6E0;--blush:#FCE6E4;--gold:#BF886B;--goldText:#8C5E45;--ink:#2F2828;--ivory:#FFF8F5;--line:#F1DDD3;--wa:#1F7A4D}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Arial,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
-header{background:var(--pink);text-align:center;padding:14px 16px 10px}
-header img{height:120px;max-width:90%;object-fit:contain;display:block;margin:0 auto}
+.top{background:var(--ivory);border-bottom:1px solid var(--line)}
+.top .in{max-width:1000px;margin:0 auto;height:64px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top .logo img{height:48px;width:auto;display:block;border-radius:8px}
+.top .acts{display:flex;align-items:center;gap:8px}
+.round{width:44px;height:44px;border-radius:22px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ink);background:transparent;cursor:pointer;padding:0;color:var(--ink)}
+.round.wa2{background:var(--wa);border-color:var(--wa)}
+.dnav{display:none;gap:30px;font-size:13px;font-weight:600;letter-spacing:1px}
+.dnav a{color:var(--ink);text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+.dnav a:hover{border-bottom-color:var(--gold)}
+.menu{position:fixed;inset:0;background:var(--ivory);z-index:30;display:none;flex-direction:column}
+.menu.open{display:flex}
+.menu .mhead{height:64px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.menu nav{display:flex;flex-direction:column;padding:8px 20px}
+.menu nav a{min-height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:600}
+.menu nav a small{font-family:Montserrat,Arial,sans-serif;font-size:13px;color:var(--goldText);font-weight:500}
+.menu .mbtns{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.pill{min-height:50px;border-radius:25px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:600;font-size:15px}
+.pill.g{background:var(--wa);color:#fff}
+.pill.o{border:1px solid var(--ink);color:var(--ink)}
+.hero{background:var(--pink)}
+.hero .in{max-width:1000px;margin:0 auto;padding:26px 20px 22px;display:grid;gap:16px}
+.hero .ey{font-size:11px;letter-spacing:3px;font-weight:600;color:#6E4634}
+.hero h1{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:42px;line-height:1.02}
+.hero p{margin:0;font-size:14px;line-height:1.55}
+.hero .cta{display:flex;gap:10px}
+.hero .cta a{flex:1;min-height:46px;border-radius:23px;text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.hero .cta .d{background:var(--ink);color:var(--ivory)}
+.hero .cta .l{border:1px solid var(--ink);color:var(--ink)}
+.hero .imgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hero .imgs div{aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:var(--blush)}
+.hero .imgs img{width:100%;height:100%;object-fit:cover;display:block}
+.box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin:22px 0 0;scroll-margin-top:120px}
+.box h2{margin:0 0 12px;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:26px}
+.step{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.5;margin-top:10px}
+.step i{flex:none;width:32px;height:32px;border-radius:16px;background:var(--pink);color:#6E4634;font-style:normal;font-weight:600;display:flex;align-items:center;justify-content:center}
+.box.dark{background:var(--ink);color:var(--ivory);border-color:var(--ink)}
+.box.dark h2{color:#FBE2C8}
+.box.dark a{color:#FBE2C8}
+.box .cl{font-size:14px;line-height:1.9}
+#productos{scroll-margin-top:120px}
+@media (min-width:860px){
+  .dnav{display:flex}
+  .burger{display:none}
+  .top .in{height:76px}
+  .top .logo img{height:56px}
+  .hero .in{grid-template-columns:1fr 1fr;align-items:center;gap:40px;padding:48px 20px}
+  .hero h1{font-size:60px}
+  .hero p{font-size:16px}
+  .hero .cta a{flex:0 0 auto;padding:0 28px}
+  .hero .imgs{gap:14px}
+  .hero .imgs div:nth-child(odd){margin-top:36px}
+  .boxes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+}
 .controls{position:sticky;top:0;z-index:5;background:rgba(255,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 14px}
 .controls .in{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .search{width:100%;min-height:44px;border-radius:22px;border:1px solid var(--line);padding:0 18px;font:inherit;font-size:16px;background:#fff;color:var(--ink);outline:none}
@@ -72,16 +123,60 @@ footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:va
 </style>
 </head>
 <body>
-<header>
-  <img src="img/logo.png?v=2" alt="LUVANA Beauty & Care">
-</header>
-<div class="controls"><div class="in">
+<header class="top"><div class="in">
+  <a class="logo" href="#" aria-label="LUVANA Beauty &amp; Care, inicio"><img src="img/logo.png?v=2" alt="LUVANA Beauty &amp; Care"></a>
+  <nav class="dnav" aria-label="Menú principal"><a href="#productos">PRODUCTOS</a><a href="#como">CÓMO PEDIR</a><a href="#contacto">CONTACTO</a></nav>
+  <div class="acts">
+    <a class="round wa2 waLink" href="#" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7L4 20Z"/></svg></a>
+    <button type="button" class="round burger" id="menuBtn" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+</div></header>
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Menú">
+  <div class="mhead"><img src="img/logo.png?v=2" alt="LUVANA Beauty &amp; Care" style="height:46px;border-radius:8px"><button type="button" class="round" id="menuClose" aria-label="Cerrar menú" style="background:var(--ink);color:var(--ivory)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <nav aria-label="Menú principal">
+    <a href="#productos">Productos<small>Ver catálogo</small></a>
+    <a href="#como">Cómo pedir<small>3 pasos</small></a>
+    <a href="#contacto">Contacto<small>Horario y redes</small></a>
+  </nav>
+  <div class="mbtns">
+    <a class="pill g waLink" href="#" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
+    <a class="pill o" href="https://www.instagram.com/luvanabeautyshop" target="_blank" rel="noopener">Síguenos en Instagram</a>
+  </div>
+</div>
+<section class="hero"><div class="in">
+  <div style="display:grid;gap:14px">
+    <div class="ey">MAQUILLAJE Y CUIDADO DE LA PIEL</div>
+    <h1>Tu belleza,<br>tu esencia.</h1>
+    <p>Elige tus productos favoritos y haz tu pedido por WhatsApp en un minuto.</p>
+    <div class="cta"><a class="d" href="#productos">Ver productos</a><a class="l" href="#como">Cómo pedir</a></div>
+  </div>
+  <div class="imgs" aria-label="Productos destacados">
+    <div><img id="h1" src="img/pestanina-sky-high.jpg" alt="Producto destacado"></div>
+    <div><img id="h2" src="img/combo-recargado-de-niacinamida.jpg" alt="Combo recargado de niacinamida"></div>
+    <div><img id="h3" src="img/cosmetiquera-pequena-con-cierre.jpg" alt="Cosmetiquera pequeña con cierre"></div>
+  </div>
+</div></section>
+<div class="controls" id="productos"><div class="in">
   <input class="search" id="q" type="search" placeholder="Buscar producto o marca…" aria-label="Buscar producto o marca">
   <div class="chips" id="cats" role="group" aria-label="Categoría"></div>
 </div></div>
 <main>
   <div class="count" id="count"></div>
   <div class="grid" id="grid"></div>
+  <div class="boxes">
+    <section class="box" id="como">
+      <h2>Cómo pedir</h2>
+      <div class="step"><i>1</i><div><b>Elige</b> tus productos con el botón Agregar.</div></div>
+      <div class="step"><i>2</i><div><b>Toca "Pedir por WhatsApp":</b> el pedido llega listo con el total.</div></div>
+      <div class="step"><i>3</i><div><b>Te confirmamos</b> disponibilidad, pago y entrega.</div></div>
+    </section>
+    <section class="box dark" id="contacto">
+      <h2>Contacto</h2>
+      <div class="cl">WhatsApp: <a class="waLink" href="#" target="_blank" rel="noopener" id="waNum">+57 318 705 0354</a><br>
+      Instagram: <a href="https://www.instagram.com/luvanabeautyshop" target="_blank" rel="noopener">@luvanabeautyshop</a><br>
+      Horario: 8:00 a. m. – 8:00 p. m.</div>
+    </section>
+  </div>
   <footer><div class="b">LUVANA Beauty &amp; Care</div><div style="font-style:italic">By Diana Acosta</div>Elige tus productos y envía tu pedido por WhatsApp.<br>Precios en pesos colombianos, sujetos a disponibilidad.<div class="credit" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--goldText);text-align:center;line-height:1.7">© <span class="anio">2026</span> LUVANA Beauty &amp; Care. Todos los derechos reservados.<br><span style="font-size:11px">Desarrollado por Andrés Jaramillo</span></div></footer>
 <script>document.querySelectorAll('.anio').forEach(e => e.textContent = new Date().getFullYear());</script>
 </main>
@@ -187,7 +282,23 @@ $('lbClose').onclick = () => $('lb').classList.remove('open');
 $('lb').onclick = e => { if(e.target.id==='lb') $('lb').classList.remove('open'); };
 document.addEventListener('keydown', e => { if(e.key==='Escape') $('lb').classList.remove('open'); });
 
-function start(){ try { cart = JSON.parse(localStorage.getItem('luvana-cart')||'{}')||{}; } catch(e){ cart={}; } renderCats(); render(); renderBar(); }
+// ---------- encabezado, menú y banner
+(function(){
+  const num = String((window.LUVANA_CONFIG||{}).whatsapp||'').replace(/\D/g,'');
+  const link = 'https://wa.me/' + num + '?text=' + encodeURIComponent('¡Hola LUVANA! Quiero información sobre sus productos.');
+  document.querySelectorAll('.waLink').forEach(a => a.href = link);
+  if(num.length === 12) $('waNum').textContent = '+' + num.slice(0,2) + ' ' + num.slice(2,5) + ' ' + num.slice(5,8) + ' ' + num.slice(8);
+  const menu = $('menu'), btn = $('menuBtn');
+  const abrir = o => { menu.classList.toggle('open', o); btn.setAttribute('aria-expanded', o); document.body.style.overflow = o ? 'hidden' : ''; if(o) $('menuClose').focus(); };
+  btn.onclick = () => abrir(true); $('menuClose').onclick = () => abrir(false);
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => abrir(false)));
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && menu.classList.contains('open')) abrir(false); });
+})();
+const DESTACADOS = [['h1', p => /brocha/.test(norm(p.n))], ['h2', p => /niacinamida/.test(norm(p.n))], ['h3', p => /cosmetiquera/.test(norm(p.n)) && /pequen/.test(norm(p.n))]];
+function renderHero(){
+  DESTACADOS.forEach(([id, ok]) => { const p = P.find(x => x.f && ok(x)); const im = $(id); if(p){ im.src = p.f; im.alt = p.n; } });
+}
+function start(){ try { cart = JSON.parse(localStorage.getItem('luvana-cart')||'{}')||{}; } catch(e){ cart={}; } renderCats(); render(); renderBar(); renderHero(); }
 start();
 // Productos, precios y disponibilidad en vivo desde Supabase (vista sin costos).
 (async () => {
