@@ -1,7 +1,18 @@
 {
   "name": "luvana",
+  "main": "worker.js",
   "compatibility_date": "2026-11-01",
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  // Una vez al día, 7:23 a. m. hora Colombia (12:23 UTC): mantiene activo Supabase.
+  "triggers": {
+    "crons": ["23 12 * * *"]
+  },
+  // Valores públicos (los mismos de config.js). Nunca poner aquí la clave secret / service_role.
+  "vars": {
+    "SUPABASE_URL": "https://letytgfyvzmhsyrqwuhn.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_J7Lrd1NN4RdW-r-06iCGTA_oIGvJyx2"
   }
 }

@@ -22,3 +22,8 @@
 - Las tablas solo se pueden leer y modificar con un usuario cuyo correo esté en la tabla `admins`.
 - El catálogo público lee la vista `productos_publicos`, que no incluye costos.
 - Las ventas se registran con la función `registrar_venta`, que descuenta el inventario y no deja vender más unidades de las que hay.
+
+## Respaldo y mantenimiento
+
+- **Respaldo:** en `/admin`, botón **Descargar respaldo** → Excel con hojas *Productos*, *Ventas* y *Detalle de ventas*. La página avisa si pasan 7 días sin descargar uno (Supabase gratis no guarda respaldos).
+- **Mantener activo Supabase:** `worker.js` tiene una tarea programada (`triggers.crons` en `wrangler.jsonc`) que consulta la base una vez al día para que el proyecto gratis no se pause. Se ve en Cloudflare → Workers → luvana → *Settings → Trigger events* y sus ejecuciones en *Logs*.

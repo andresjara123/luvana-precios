@@ -97,7 +97,7 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
 <header>
   <div class="top">
     <img src="img/logo.png?v=2" alt="LUVANA Beauty &amp; Care">
-    <div class="who hidden" id="who"><span id="whoEmail"></span><button class="btn small" id="logout" type="button">Salir</button></div>
+    <div class="who hidden" id="who"><span id="whoEmail"></span><button class="btn small" id="respaldo" type="button">Descargar respaldo</button><button class="btn small" id="logout" type="button">Salir</button></div>
   </div>
   <nav id="tabs" class="hidden" role="tablist" aria-label="Secciones">
     <button type="button" role="tab" data-tab="vender" aria-selected="true">Vender</button>
@@ -109,6 +109,7 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
 </header>
 
 <main>
+  <div id="respaldoAviso" class="card hidden" style="margin-bottom:16px;background:var(--blush);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span id="respaldoTxt"></span><button class="btn small dark" id="respaldo2" type="button">Descargar respaldo ahora</button></div>
   <div id="cfgMsg" class="card hidden"><h2>Falta configurar Supabase</h2><p>Abre <b>config.js</b> en el repositorio y pon la URL del proyecto y la clave <i>anon</i>. Los pasos están en el README.</p></div>
 
   <section id="login" class="login card hidden">
@@ -264,6 +265,7 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="config.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -614,12 +616,62 @@ async function abrir(t){
   if(t==='ventas') await renderVentas();
   if(t==='inventario'){ await cargarProductos(); renderInventario(); }
 }
+// ---------- RESPALDO (Excel con productos, ventas y detalle)
+async function todo(tabla, select, orden){
+  const filas = []; const paso = 1000;
+  for(let desde = 0; ; desde += paso){
+    const { data, error } = await sb.from(tabla).select(select).order(orden).range(desde, desde + paso - 1);
+    if(error) throw error;
+    filas.push(...data);
+    if(data.length < paso) break;
+  }
+  return filas;
+}
+function avisoRespaldo(){
+  let ultimo = null; try { ultimo = localStorage.getItem('luvana-ultimo-respaldo'); } catch(e){}
+  const dias = ultimo ? Math.floor((Date.now() - Number(ultimo)) / 86400000) : null;
+  const mostrar = dias === null || dias >= 7;
+  show('respaldoAviso', mostrar);
+  if(mostrar) $('respaldoTxt').textContent = dias === null ? 'Aún no has descargado un respaldo desde este dispositivo. Te recomiendo hacerlo una vez por semana.' : 'Tu último respaldo fue hace ' + dias + ' días. Descarga uno nuevo.';
+}
+async function descargarRespaldo(){
+  if(!window.XLSX) return toast('No cargó la herramienta de Excel. Revisa tu conexión y recarga.', true);
+  const btns = [$('respaldo'), $('respaldo2')]; btns.forEach(b => b.disabled = true);
+  toast('Preparando respaldo…');
+  try {
+    const [prods, ventas, items] = await Promise.all([
+      todo('productos', '*', 'id'),
+      todo('ventas', '*', 'id'),
+      todo('venta_items', '*', 'id')
+    ]);
+    const fecha = d => d ? new Date(d).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' }) : '';
+    const hojaProd = prods.map(p => ({ 'ID':p.id, 'Producto':p.nombre, 'Marca':p.marca||'', 'Categoría':p.categoria, 'Precio':p.precio, 'Costo':p.costo, 'Unidades':p.stock, 'Ganancia por unidad':p.precio-p.costo, 'Activo':p.activo?'Sí':'No', 'Foto':p.foto||'', 'Actualizado':fecha(p.actualizado) }));
+    const hojaVentas = ventas.map(v => ({ 'Venta #':v.id, 'Fecha':fecha(v.fecha), 'Cliente':v.cliente||'', 'Método de pago':v.metodo_pago, 'Total':v.total, 'Costo':v.costo_total, 'Ganancia':v.total-v.costo_total, 'Anulada':v.anulada?'Sí':'No', 'Notas':v.notas||'' }));
+    const hojaItems = items.map(i => ({ 'Venta #':i.venta_id, 'ID producto':i.producto_id ?? '', 'Producto':i.nombre, 'Cantidad':i.cantidad, 'Precio unitario':i.precio_unit, 'Costo unitario':i.costo_unit, 'Subtotal':i.cantidad*i.precio_unit, 'Ganancia':i.cantidad*(i.precio_unit-i.costo_unit) }));
+    const wb = XLSX.utils.book_new();
+    const add = (rows, nombre, anchos) => { const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'Sin datos':'' }]); ws['!cols'] = anchos.map(w => ({ wch:w })); XLSX.utils.book_append_sheet(wb, ws, nombre); };
+    add(hojaProd, 'Productos', [6,42,18,20,10,10,10,12,8,40,18]);
+    add(hojaVentas, 'Ventas', [8,18,24,16,10,10,10,8,40]);
+    add(hojaItems, 'Detalle de ventas', [8,10,42,10,14,14,12,12]);
+    const hoy = new Date(); const nombre = 'respaldo-luvana-' + hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0') + '.xlsx';
+    XLSX.writeFile(wb, nombre);
+    try { localStorage.setItem('luvana-ultimo-respaldo', String(Date.now())); } catch(e){}
+    avisoRespaldo();
+    toast('Respaldo descargado: ' + prods.length + ' productos y ' + ventas.length + ' ventas');
+  } catch(err) {
+    toast('No se pudo hacer el respaldo: ' + (err.message || err), true);
+  } finally {
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
 async function entrar(session){
-  if(!session){ show('login', true); show('tabs', false); show('who', false); ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, false)); return; }
+  if(!session){ show('login', true); show('tabs', false); show('who', false); show('respaldoAviso', false); ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, false)); return; }
   const { data: admin } = await sb.rpc('es_admin');
   if(!admin){ $('loginErr').textContent = 'Este correo no está autorizado como administradora (revisa la tabla admins).'; await sb.auth.signOut(); return; }
   show('login', false); show('tabs', true); show('who', true);
   $('whoEmail').textContent = session.user.email;
+  avisoRespaldo();
   abrir(tab);
 }
 
@@ -633,6 +685,7 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
     if(error) $('loginErr').textContent = 'No se pudo entrar: ' + error.message;
   };
   $('logout').onclick = () => sb.auth.signOut();
+  $('respaldo').onclick = descargarRespaldo; $('respaldo2').onclick = descargarRespaldo;
   let last = null;
   sb.auth.onAuthStateChange((ev, session) => { const id = session ? session.user.id : null; if(id === last && ev !== 'INITIAL_SESSION') return; last = id; setTimeout(() => entrar(session), 0); });
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => abrir(b.dataset.tab));
