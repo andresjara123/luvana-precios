@@ -105,6 +105,7 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
     <button type="button" role="tab" data-tab="dashboard" aria-selected="false">Dashboard</button>
     <button type="button" role="tab" data-tab="ventas" aria-selected="false">Ventas</button>
     <button type="button" role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
+    <button type="button" role="tab" data-tab="mercancia" aria-selected="false">Mercancía</button>
   </nav>
 </header>
 
@@ -220,6 +221,58 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
     <div id="ventasList" class="sec"></div>
   </section>
 
+  <!-- MERCANCÍA -->
+  <section id="tab-mercancia" class="sec hidden">
+    <div id="mSinSql" class="card hidden" style="background:var(--blush)"><b>Falta un paso en Supabase:</b> ejecuta <code>supabase/mercancia.sql</code> en el SQL Editor para activar las entradas de mercancía y el pedido al proveedor.</div>
+    <div class="grid2">
+      <div class="card">
+        <h2>Registrar entrada de mercancía</h2>
+        <p class="muted" style="margin:6px 0 0">Cuando te llegue mercancía, agrégala aquí: suma las unidades y actualiza el costo (promedio entre lo que tenías y lo que llegó).</p>
+        <input type="search" id="mq" placeholder="Buscar producto que llegó…" aria-label="Buscar producto que llegó" style="margin-top:10px">
+        <div class="plist" id="mlist" style="max-height:40vh"></div>
+      </div>
+      <div class="card">
+        <h2>Entrada actual</h2>
+        <div class="form" style="margin-top:8px">
+          <label>Proveedor<input id="mProv" list="provList" placeholder="Nombre del proveedor"></label>
+          <datalist id="provList"></datalist>
+        </div>
+        <div id="mItems" style="margin-top:8px"></div>
+        <div class="total"><span>Total invertido</span><span id="mTotal">$0</span></div>
+        <div class="form">
+          <label>Notas (opcional)<textarea id="mNotas" placeholder="Número de factura, forma de pago, etc."></textarea></label>
+          <button class="btn dark" id="mRegistrar" type="button">Registrar entrada</button>
+          <button class="btn" id="mVaciar" type="button">Vaciar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Pedido al proveedor</h2>
+        <label style="max-width:260px">Proveedor<select id="pProv"></select></label>
+      </div>
+      <p class="muted" style="margin:6px 0 10px">Productos con unidades en su mínimo o por debajo. La cantidad sugerida alcanza para el doble del mínimo o para lo que vendiste en los últimos 30 días; puedes cambiarla.</p>
+      <div class="tablewrap"><table id="pedido"></table></div>
+      <div class="qsum" id="pSum" style="margin-top:12px"></div>
+      <div class="row">
+        <button class="btn" id="pCopy" type="button">Copiar pedido</button>
+        <a class="btn wa" id="pWa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <button class="btn dark" id="pEntrada" type="button">Llegó el pedido → pasar a entrada</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Historial de entradas</h2>
+        <label style="max-width:220px">Periodo
+          <select id="ePeriodo"><option value="30" selected>Últimos 30 días</option><option value="mes">Este mes</option><option value="todo">Todo</option></select>
+        </label>
+      </div>
+      <div id="entradasList" class="sec" style="margin-top:10px"></div>
+    </div>
+  </section>
+
   <!-- INVENTARIO -->
   <section id="tab-inventario" class="sec hidden">
     <div class="card">
@@ -257,6 +310,10 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
     <label>Nombre<input id="eNombre" required></label>
     <label>Marca<input id="eMarca"></label>
     <label>Categoría<select id="eCat"></select></label>
+    <div class="row">
+      <label style="flex:2 1 180px">Proveedor<input id="eProv" list="provList"></label>
+      <label style="flex:1 1 120px">Unidades mínimas<input id="eMin" type="number" min="0"></label>
+    </div>
     <div class="row" style="justify-content:flex-end">
       <button class="btn" type="button" id="eCancelar">Cancelar</button>
       <button class="btn dark" type="button" id="eGuardar">Guardar cambios</button>
@@ -536,6 +593,7 @@ function abrirEditor(p){
   editP = p; editBlob = null; editQuitar = false;
   if(editUrl){ URL.revokeObjectURL(editUrl); editUrl = null; }
   $('eNombre').value = p.nombre; $('eMarca').value = p.marca || '';
+  $('eProv').value = p.proveedor || ''; $('eMin').value = p.stock_minimo ?? 3;
   const cats = CATEGORIAS.includes(p.categoria) ? CATEGORIAS : [...CATEGORIAS, p.categoria];
   $('eCat').innerHTML = cats.map(c => '<option>'+esc(c)+'</option>').join(''); $('eCat').value = p.categoria;
   $('eFile').value = ''; prevFoto(p.foto);
@@ -562,6 +620,7 @@ const RUTA_FOTOS = '/storage/v1/object/public/fotos/';
 async function guardarEdicion(){
   const p = editP; if(!p) return;
   const upd = { nombre:$('eNombre').value.trim(), marca:$('eMarca').value.trim() || null, categoria:$('eCat').value, actualizado:new Date().toISOString() };
+  if('stock_minimo' in p){ upd.proveedor = $('eProv').value.trim() || null; const mn = parseInt($('eMin').value, 10); upd.stock_minimo = Number.isFinite(mn) && mn >= 0 ? mn : 3; }
   if(!upd.nombre) return toast('El nombre no puede quedar vacío', true);
   const btn = $('eGuardar'); btn.disabled = true; btn.textContent = 'Guardando…';
   try {
@@ -609,13 +668,163 @@ async function agregarProducto(e){
 async function abrir(t){
   tab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===t));
-  ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, x===t));
+  ['vender','cotizar','dashboard','ventas','inventario','mercancia'].forEach(x => show('tab-'+x, x===t));
   if(t==='vender'){ await cargarProductos(); renderVender(); renderCart(); }
   if(t==='cotizar'){ await cargarProductos(); renderCotizarLista(); renderCot(); }
   if(t==='dashboard') await renderDashboard();
   if(t==='ventas') await renderVentas();
   if(t==='inventario'){ await cargarProductos(); renderInventario(); }
+  if(t==='mercancia') await renderMercancia();
 }
+// ---------- MERCANCÍA: entradas, pedido al proveedor e historial
+let entrada = {}; // producto_id -> { cantidad, costo }
+let pedidoCant = {}; // producto_id -> cantidad editada a mano
+const tieneMercancia = () => productos.length > 0 && 'stock_minimo' in productos[0];
+function proveedores(){ return [...new Set(productos.map(p => (p.proveedor || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'es')); }
+function renderProvListas(){
+  const ps = proveedores();
+  $('provList').innerHTML = ps.map(p => '<option value="'+esc(p)+'"></option>').join('');
+  const sel = $('pProv'), actual = sel.value;
+  sel.innerHTML = '<option value="">Todos los proveedores</option>' + ps.map(p => '<option>'+esc(p)+'</option>').join('') + '<option value="__sin">Sin proveedor asignado</option>';
+  if([...sel.options].some(o => o.value === actual)) sel.value = actual;
+}
+function renderEntradaLista(){
+  const q = norm($('mq').value.trim());
+  const list = $('mlist'); list.innerHTML = '';
+  productos.filter(p => p.activo && (!q || norm(p.nombre+' '+(p.marca||'')+' '+(p.proveedor||'')).includes(q))).forEach(p => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'prow';
+    b.innerHTML = thumbHtml(p) + '<div><div class="pn">'+esc(p.nombre)+'</div><div class="pm">'+esc(p.marca||'')+' · quedan '+p.stock+(p.proveedor ? ' · '+esc(p.proveedor) : '')+'</div></div><div class="pp">'+fmt(p.costo)+'</div>';
+    b.setAttribute('aria-label', 'Agregar '+p.nombre+' a la entrada');
+    b.onclick = () => { if(!entrada[p.id]) entrada[p.id] = { cantidad:1, costo:p.costo }; else entrada[p.id].cantidad++; if(!$('mProv').value && p.proveedor) $('mProv').value = p.proveedor; renderEntrada(); };
+    list.appendChild(b);
+  });
+}
+function renderEntrada(){
+  const box = $('mItems'); box.innerHTML = ''; let tot = 0;
+  const ids = Object.keys(entrada).filter(id => productos.some(p => p.id == id));
+  if(!ids.length) box.innerHTML = '<p class="muted">Toca los productos que llegaron.</p>';
+  ids.forEach(id => {
+    const p = productos.find(x => x.id == id), it = entrada[id];
+    tot += it.cantidad * it.costo;
+    const l = document.createElement('div'); l.className = 'cartline'; l.style.flexWrap = 'wrap';
+    l.innerHTML = '<span style="flex:1 1 160px">'+esc(p.nombre)+'<br><span class="muted">tenías '+p.stock+' a '+fmt(p.costo)+'</span></span>'
+      + '<label style="width:90px">Unidades<input type="number" min="1" class="mc"></label>'
+      + '<label style="width:110px">Costo c/u<input type="number" min="0" class="mk"></label>'
+      + '<button type="button" class="btn small" aria-label="Quitar '+esc(p.nombre)+'">Quitar</button>';
+    const mc = l.querySelector('.mc'), mk = l.querySelector('.mk');
+    mc.value = it.cantidad; mk.value = it.costo;
+    mc.onchange = () => { const v = parseInt(mc.value, 10); it.cantidad = v > 0 ? v : 1; renderEntrada(); };
+    mk.onchange = () => { const v = parseInt(mk.value, 10); it.costo = v >= 0 ? v : 0; renderEntrada(); };
+    l.querySelector('button').onclick = () => { delete entrada[id]; renderEntrada(); };
+    box.appendChild(l);
+  });
+  $('mTotal').textContent = fmt(tot);
+  $('mRegistrar').disabled = !ids.length;
+}
+async function registrarEntrada(){
+  const items = Object.entries(entrada).map(([id, it]) => ({ producto_id:Number(id), cantidad:it.cantidad, costo_unit:it.costo }));
+  if(!items.length) return;
+  $('mRegistrar').disabled = true;
+  const { data, error } = await sb.rpc('registrar_entrada', { items, proveedor:$('mProv').value.trim(), notas:$('mNotas').value.trim() });
+  if(error){ toast(error.message + (/registrar_entrada|function/i.test(error.message) ? ' (¿ya ejecutaste supabase/mercancia.sql?)' : ''), true); $('mRegistrar').disabled = false; return; }
+  toast('Entrada #'+data+' registrada: '+items.reduce((a,i)=>a+i.cantidad,0)+' unidades');
+  entrada = {}; pedidoCant = {}; $('mNotas').value = '';
+  await renderMercancia();
+}
+function sugerido(p, vendidos){
+  const minimo = p.stock_minimo ?? 3, objetivo = Math.max(minimo * 2, vendidos || 0);
+  return Math.max(objetivo - p.stock, 1);
+}
+let vendidos30 = {};
+function lineasPedido(){
+  const prov = $('pProv').value;
+  return productos
+    .filter(p => p.activo && p.stock <= (p.stock_minimo ?? 3))
+    .filter(p => !prov || (prov === '__sin' ? !p.proveedor : p.proveedor === prov))
+    .sort((a,b) => a.stock - b.stock || a.nombre.localeCompare(b.nombre, 'es'))
+    .map(p => ({ p, cant: pedidoCant[p.id] ?? sugerido(p, vendidos30[p.id]) }))
+    .filter(l => l.cant > 0);
+}
+function msgPedido(){
+  const ls = lineasPedido(); if(!ls.length) return '';
+  const prov = $('pProv').value;
+  let m = 'Hola' + (prov && prov !== '__sin' ? ' ' + prov : '') + ', te quiero hacer este pedido para LUVANA Beauty & Care:\n\n';
+  ls.forEach(l => { m += '• ' + l.p.nombre + (l.p.marca ? ' (' + l.p.marca + ')' : '') + ' — ' + l.cant + ' unid.\n'; });
+  return m + '\n¿Me confirmas disponibilidad y precio? Gracias.';
+}
+function renderPedido(){
+  const t = $('pedido');
+  const todos = productos.filter(p => p.activo && p.stock <= (p.stock_minimo ?? 3));
+  const ls = productos
+    .filter(p => p.activo && p.stock <= (p.stock_minimo ?? 3))
+    .filter(p => { const prov = $('pProv').value; return !prov || (prov === '__sin' ? !p.proveedor : p.proveedor === prov); })
+    .sort((a,b) => a.stock - b.stock || a.nombre.localeCompare(b.nombre, 'es'));
+  if(!todos.length){ t.innerHTML = '<tr><td class="muted">Todo está por encima de su mínimo. No hay nada que pedir por ahora.</td></tr>'; }
+  else if(!ls.length){ t.innerHTML = '<tr><td class="muted">Nada que pedir a este proveedor.</td></tr>'; }
+  else {
+    t.innerHTML = '<tr><th>Producto</th><th class="num">Quedan</th><th class="num">Mínimo</th><th class="num">Vendidos 30 días</th><th class="num">Pedir</th><th class="num">Costo aprox.</th></tr>';
+    ls.forEach(p => {
+      const tr = document.createElement('tr'), cant = pedidoCant[p.id] ?? sugerido(p, vendidos30[p.id]);
+      tr.innerHTML = '<td><div class="pn">'+esc(p.nombre)+'</div><div class="pm">'+esc(p.proveedor || 'Sin proveedor')+'</div></td>'
+        + '<td class="num">'+(p.stock === 0 ? '<span class="pill red">Agotado</span>' : p.stock)+'</td>'
+        + '<td class="num">'+(p.stock_minimo ?? 3)+'</td><td class="num">'+(vendidos30[p.id] || 0)+'</td>'
+        + '<td class="num"><input type="number" min="0" style="width:80px;min-height:36px;text-align:right" aria-label="Unidades a pedir de '+esc(p.nombre)+'"></td>'
+        + '<td class="num">'+fmt(cant * p.costo)+'</td>';
+      const inp = tr.querySelector('input'); inp.value = cant;
+      inp.onchange = () => { const v = parseInt(inp.value, 10); pedidoCant[p.id] = v >= 0 ? v : 0; renderPedido(); };
+      t.appendChild(tr);
+    });
+  }
+  const lp = lineasPedido();
+  $('pSum').innerHTML = '<div><span>Productos a pedir</span><b>'+lp.length+'</b></div><div><span>Unidades</span><b>'+lp.reduce((a,l)=>a+l.cant,0)+'</b></div><div><span>Inversión aproximada (con tu último costo)</span><b>'+fmt(lp.reduce((a,l)=>a+l.cant*l.p.costo,0))+'</b></div>';
+  const msg = msgPedido();
+  $('pWa').href = msg ? 'https://wa.me/?text=' + encodeURIComponent(msg) : '#';
+  $('pCopy').disabled = $('pEntrada').disabled = !lp.length;
+}
+function pedidoAEntrada(){
+  const lp = lineasPedido(); if(!lp.length) return;
+  entrada = {}; lp.forEach(l => entrada[l.p.id] = { cantidad:l.cant, costo:l.p.costo });
+  const prov = $('pProv').value; $('mProv').value = prov && prov !== '__sin' ? prov : '';
+  renderEntrada(); window.scrollTo({ top:0, behavior:'smooth' });
+  toast('Pedido pasado a la entrada: revisa unidades y costos que llegaron y registra');
+}
+async function renderEntradas(){
+  const el = $('entradasList');
+  let q = sb.from('entradas').select('*, entrada_items(*)').order('fecha', { ascending:false });
+  const d = desde($('ePeriodo').value); if(d) q = q.gte('fecha', d.toISOString());
+  const { data, error } = await q;
+  if(error){ el.innerHTML = '<p class="muted">No se pudo cargar el historial: '+esc(error.message)+'</p>'; return; }
+  if(!data.length){ el.innerHTML = '<p class="muted">No hay entradas en este periodo.</p>'; return; }
+  el.innerHTML = '';
+  data.forEach(e => {
+    const d2 = document.createElement('div'); d2.className = 'venta' + (e.anulada ? ' anulada' : '');
+    const f = new Date(e.fecha).toLocaleString('es-CO', { dateStyle:'medium', timeStyle:'short' });
+    d2.innerHTML = '<div class="h"><span><b>Entrada #'+e.id+'</b> · '+esc(f)+(e.proveedor ? ' · '+esc(e.proveedor) : '')+(e.anulada ? ' <span class="pill red">Anulada</span>' : '')+'</span><span><b>'+fmt(e.total_costo)+'</b> · '+e.entrada_items.reduce((a,i)=>a+i.cantidad,0)+' unid.</span></div>'
+      + '<ul>'+e.entrada_items.map(i => '<li>'+esc(i.nombre)+' x'+i.cantidad+' a '+fmt(i.costo_unit)+'</li>').join('')+'</ul>'
+      + (e.notas ? '<p class="muted" style="margin:6px 0 0">'+esc(e.notas)+'</p>' : '');
+    if(!e.anulada){
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.style.marginTop = '8px'; b.textContent = 'Anular entrada';
+      b.onclick = async () => {
+        if(!confirm('¿Anular la entrada #'+e.id+'? Se restan esas unidades del inventario.')) return;
+        const { error: er } = await sb.rpc('anular_entrada', { p_entrada_id: e.id });
+        if(er) return toast(er.message, true);
+        toast('Entrada #'+e.id+' anulada'); await renderMercancia();
+      };
+      d2.appendChild(b);
+    }
+    el.appendChild(d2);
+  });
+}
+async function renderMercancia(){
+  const [ventas] = await Promise.all([cargarVentas('30'), cargarProductos()]);
+  const ok = tieneMercancia();
+  show('mSinSql', !ok);
+  vendidos30 = {};
+  ventas.filter(v => !v.anulada).forEach(v => v.venta_items.forEach(i => { if(i.producto_id) vendidos30[i.producto_id] = (vendidos30[i.producto_id] || 0) + i.cantidad; }));
+  renderProvListas(); renderEntradaLista(); renderEntrada(); renderPedido();
+  if(ok) await renderEntradas(); else $('entradasList').innerHTML = '';
+}
+
 // ---------- RESPALDO (Excel con productos, ventas y detalle)
 async function todo(tabla, select, orden){
   const filas = []; const paso = 1000;
@@ -644,15 +853,19 @@ async function descargarRespaldo(){
       todo('ventas', '*', 'id'),
       todo('venta_items', '*', 'id')
     ]);
+    let ent = [], entItems = [];
+    try { [ent, entItems] = await Promise.all([todo('entradas', '*', 'id'), todo('entrada_items', '*', 'id')]); } catch(_){ /* aún sin mercancia.sql */ }
     const fecha = d => d ? new Date(d).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' }) : '';
-    const hojaProd = prods.map(p => ({ 'ID':p.id, 'Producto':p.nombre, 'Marca':p.marca||'', 'Categoría':p.categoria, 'Precio':p.precio, 'Costo':p.costo, 'Unidades':p.stock, 'Ganancia por unidad':p.precio-p.costo, 'Activo':p.activo?'Sí':'No', 'Foto':p.foto||'', 'Actualizado':fecha(p.actualizado) }));
+    const hojaProd = prods.map(p => ({ 'ID':p.id, 'Producto':p.nombre, 'Marca':p.marca||'', 'Categoría':p.categoria, 'Proveedor':p.proveedor||'', 'Precio':p.precio, 'Costo':p.costo, 'Unidades':p.stock, 'Mínimo':p.stock_minimo ?? '', 'Ganancia por unidad':p.precio-p.costo, 'Activo':p.activo?'Sí':'No', 'Foto':p.foto||'', 'Actualizado':fecha(p.actualizado) }));
     const hojaVentas = ventas.map(v => ({ 'Venta #':v.id, 'Fecha':fecha(v.fecha), 'Cliente':v.cliente||'', 'Método de pago':v.metodo_pago, 'Total':v.total, 'Costo':v.costo_total, 'Ganancia':v.total-v.costo_total, 'Anulada':v.anulada?'Sí':'No', 'Notas':v.notas||'' }));
     const hojaItems = items.map(i => ({ 'Venta #':i.venta_id, 'ID producto':i.producto_id ?? '', 'Producto':i.nombre, 'Cantidad':i.cantidad, 'Precio unitario':i.precio_unit, 'Costo unitario':i.costo_unit, 'Subtotal':i.cantidad*i.precio_unit, 'Ganancia':i.cantidad*(i.precio_unit-i.costo_unit) }));
     const wb = XLSX.utils.book_new();
     const add = (rows, nombre, anchos) => { const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'Sin datos':'' }]); ws['!cols'] = anchos.map(w => ({ wch:w })); XLSX.utils.book_append_sheet(wb, ws, nombre); };
-    add(hojaProd, 'Productos', [6,42,18,20,10,10,10,12,8,40,18]);
+    add(hojaProd, 'Productos', [6,42,18,20,20,10,10,10,8,12,8,40,18]);
     add(hojaVentas, 'Ventas', [8,18,24,16,10,10,10,8,40]);
     add(hojaItems, 'Detalle de ventas', [8,10,42,10,14,14,12,12]);
+    add(ent.map(e => ({ 'Entrada #':e.id, 'Fecha':fecha(e.fecha), 'Proveedor':e.proveedor||'', 'Total invertido':e.total_costo, 'Anulada':e.anulada?'Sí':'No', 'Notas':e.notas||'' })), 'Entradas', [9,18,24,14,8,40]);
+    add(entItems.map(i => ({ 'Entrada #':i.entrada_id, 'ID producto':i.producto_id ?? '', 'Producto':i.nombre, 'Cantidad':i.cantidad, 'Costo unitario':i.costo_unit, 'Subtotal':i.cantidad*i.costo_unit, 'Unidades antes':i.stock_anterior, 'Costo antes':i.costo_anterior })), 'Detalle de entradas', [9,10,42,10,14,12,14,12]);
     const hoy = new Date(); const nombre = 'respaldo-luvana-' + hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0') + '-' + String(hoy.getDate()).padStart(2,'0') + '.xlsx';
     XLSX.writeFile(wb, nombre);
     try { localStorage.setItem('luvana-ultimo-respaldo', String(Date.now())); } catch(e){}
@@ -666,7 +879,7 @@ async function descargarRespaldo(){
 }
 
 async function entrar(session){
-  if(!session){ show('login', true); show('tabs', false); show('who', false); show('respaldoAviso', false); ['vender','cotizar','dashboard','ventas','inventario'].forEach(x => show('tab-'+x, false)); return; }
+  if(!session){ show('login', true); show('tabs', false); show('who', false); show('respaldoAviso', false); ['vender','cotizar','dashboard','ventas','inventario','mercancia'].forEach(x => show('tab-'+x, false)); return; }
   const { data: admin } = await sb.rpc('es_admin');
   if(!admin){ $('loginErr').textContent = 'Este correo no está autorizado como administradora (revisa la tabla admins).'; await sb.auth.signOut(); return; }
   show('login', false); show('tabs', true); show('who', true);
@@ -694,6 +907,12 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('periodo').onchange = renderDashboard; $('refrescar').onclick = renderDashboard;
   $('vperiodo').onchange = renderVentas;
   $('newForm').onsubmit = agregarProducto;
+  $('mq').oninput = renderEntradaLista; $('mRegistrar').onclick = registrarEntrada;
+  $('mVaciar').onclick = () => { entrada = {}; renderEntrada(); };
+  $('pProv').onchange = renderPedido; $('ePeriodo').onchange = renderEntradas;
+  $('pCopy').onclick = () => { const m = msgPedido(); if(!m) return toast('No hay nada que pedir', true); copiar(m); };
+  $('pWa').onclick = e => { if(!msgPedido()){ e.preventDefault(); toast('No hay nada que pedir', true); } };
+  $('pEntrada').onclick = pedidoAEntrada;
   $('cq').oninput = renderCotizarLista; $('ccat').onchange = renderCotizarLista;
   $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
   $('cCopy').onclick = () => { const m = msgCot(); if(!m) return toast('La cotización está vacía', true); copiar(m); };
