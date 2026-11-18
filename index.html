@@ -57,6 +57,9 @@ body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Ar
 .box.dark h2{color:#FBE2C8}
 .box.dark a{color:#FBE2C8}
 .box .cl{font-size:14px;line-height:1.9}
+.totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:#fff;color:var(--ink);box-shadow:0 6px 18px rgba(47,40,40,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s,transform .2s,bottom .25s}
+.totop.show{opacity:1;pointer-events:auto;transform:none}
+.bar.show ~ .totop{bottom:calc(84px + env(safe-area-inset-bottom))}
 #productos{scroll-margin-top:120px}
 @media (min-width:860px){
   .dnav{display:flex}
@@ -190,6 +193,7 @@ footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:va
     </div>
   </div>
 </div></div>
+<button type="button" class="totop" id="totop" aria-label="Volver arriba"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Foto del producto"><img id="lbImg" alt=""><p id="lbCap"></p><button type="button" id="lbClose">Cerrar</button></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -293,6 +297,12 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') $('lb').classLi
   btn.onclick = () => abrir(true); $('menuClose').onclick = () => abrir(false);
   menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => abrir(false)));
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && menu.classList.contains('open')) abrir(false); });
+})();
+(function(){
+  const b = $('totop');
+  const ver = () => b.classList.toggle('show', window.scrollY > 600);
+  window.addEventListener('scroll', ver, { passive:true }); ver();
+  b.onclick = () => window.scrollTo({ top:0, behavior:'smooth' });
 })();
 const DESTACADOS = [['h1', p => /brocha/.test(norm(p.n))], ['h2', p => /niacinamida/.test(norm(p.n))], ['h3', p => /cosmetiquera/.test(norm(p.n)) && /pequen/.test(norm(p.n))]];
 function renderHero(){
