@@ -539,7 +539,8 @@ async function renderVentas(){
     const f = new Date(v.fecha).toLocaleString('es-CO',{dateStyle:'medium',timeStyle:'short'});
     d.innerHTML = '<div class="h"><span><b>#'+v.id+'</b> · '+esc(f)+' · '+esc(v.metodo_pago)+(v.cliente?' · '+esc(v.cliente):'')+(v.anulada?' <span class="pill red">Anulada</span>':'')+'</span><span><b>'+fmt(v.total)+'</b> · ganancia '+fmt(v.total-v.costo_total)+'</span></div>'
       + '<ul>'+v.venta_items.map(i => '<li>'+esc(i.nombre)+' x'+i.cantidad+' — '+fmt(i.cantidad*i.precio_unit)+'</li>').join('')+'</ul>'
-      + (v.notas ? '<p class="muted" style="margin:6px 0 0">'+esc(v.notas)+'</p>' : '');
+      + '<div class="nota"></div>';
+    pintarNota(d.querySelector('.nota'), v);
     if(!v.anulada){
       const b = document.createElement('button'); b.type='button'; b.className='btn small'; b.style.marginTop='8px'; b.textContent='Anular venta';
       b.onclick = async () => {
@@ -552,6 +553,27 @@ async function renderVentas(){
     }
     el.appendChild(d);
   });
+}
+
+// Comentario de la venta: se muestra con un botón para editar solo ese texto.
+function pintarNota(box, v){
+  box.innerHTML = (v.notas ? '<p class="muted" style="margin:6px 0 0;white-space:pre-wrap"></p>' : '')
+    + '<button type="button" class="link" style="margin-top:6px">'+(v.notas ? 'Editar comentario' : 'Agregar comentario')+'</button>';
+  if(v.notas) box.querySelector('p').textContent = v.notas;
+  box.querySelector('button').onclick = () => {
+    box.innerHTML = '<label style="margin-top:8px">Comentario<textarea rows="3"></textarea></label>'
+      + '<div class="row" style="margin-top:8px"><button type="button" class="btn small dark">Guardar</button><button type="button" class="btn small">Cancelar</button></div>';
+    const ta = box.querySelector('textarea'); ta.value = v.notas || ''; ta.focus();
+    const [ok, cancel] = box.querySelectorAll('.row button');
+    cancel.onclick = () => pintarNota(box, v);
+    ok.onclick = async () => {
+      const notas = ta.value.trim() || null;
+      ok.disabled = true; ok.textContent = 'Guardando…';
+      const { error } = await sb.from('ventas').update({ notas }).eq('id', v.id);
+      if(error){ ok.disabled = false; ok.textContent = 'Guardar'; return toast(error.message, true); }
+      v.notas = notas; toast('Comentario de la venta #'+v.id+' guardado'); pintarNota(box, v);
+    };
+  };
 }
 
 // ---------- INVENTARIO
