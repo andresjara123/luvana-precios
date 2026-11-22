@@ -4,6 +4,7 @@
 - `admin.html` — administración privada: registrar ventas, inventario, historial y dashboard. Requiere iniciar sesión.
 - `config.js` — URL y clave pública (anon) de Supabase.
 - `supabase/schema.sql` — tablas, seguridad (RLS) y funciones de la base de datos.
+- `supabase/gastos.sql` — gastos del negocio (domicilios, bolsas, publicidad…) para la ganancia neta del dashboard.
 - `supabase/mercancia.sql` — entradas de mercancía, proveedor y unidades mínimas por producto (pedido al proveedor).
 - `supabase/fotos.sql` — carpeta pública de fotos de productos (solo administradoras pueden subir).
 
