@@ -457,7 +457,7 @@ function waLink(text){
 }
 function saludo(){ const n = $('cCliente').value.trim(); return n ? 'Hola ' + n : 'Hola'; }
 function msgUno(p){
-  return saludo() + ', te comparto este producto de LUVANA Beauty & Care:\n\n' + p.nombre + (p.marca ? ' (' + p.marca + ')' : '') + '\nPrecio: ' + fmt(p.precio) + '\n\n¿Te lo aparto? Tu belleza, tu esencia.';
+  return saludo() + ', te comparto este producto de LUVANA Beauty & Care:\n\n' + p.nombre + (p.marca ? ' (' + p.marca + ')' : '') + '\nPrecio: ' + fmt(p.precio) + '\n\n¿Quieres que te lo separe? Quedo atenta. 💕';
 }
 function lineasCot(){ return Object.entries(quote).map(([id,q]) => ({ p: productos.find(x => x.id == id), q })).filter(l => l.p); }
 function totalesCot(){
@@ -471,7 +471,7 @@ function msgCot(){
   let m = saludo() + ', esta es tu cotización de LUVANA Beauty & Care:\n\n';
   t.ls.forEach(l => { m += '• ' + l.p.nombre + (l.q>1 ? ' x' + l.q : '') + ' — ' + fmt(l.p.precio*l.q) + '\n'; });
   if(t.desc) m += '\nSubtotal: ' + fmt(t.sub) + '\nDescuento: -' + fmt(t.desc);
-  return m + '\nTotal: ' + fmt(t.total) + '\n\n¿Te lo aparto? Tu belleza, tu esencia.';
+  return m + '\nTotal: ' + fmt(t.total) + '\n\n¿Quieres que te lo separe? Quedo atenta. 💕';
 }
 function renderCotizarLista(){
   const q = norm($('cq').value.trim()), cat = $('ccat').value;
