@@ -37,8 +37,18 @@ body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Ar
 .pill{min-height:50px;border-radius:25px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-weight:600;font-size:15px}
 .pill.g{background:var(--wa);color:#fff}
 .pill.o{border:1px solid var(--ink);color:var(--ink)}
-.hero{background:var(--pink)}
-.hero .in{max-width:1000px;margin:0 auto;padding:26px 20px 22px;display:grid;gap:16px}
+.hero{background:var(--pink);position:relative;overflow:hidden}
+.slides{display:grid}
+.slide{grid-area:1/1;opacity:0;visibility:hidden;transition:opacity .8s ease,visibility 0s linear .8s}
+.slide.on{opacity:1;visibility:visible;transition:opacity .8s ease,visibility 0s}
+.slide.marca{background:var(--pink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 20px 52px}
+.slide.marca img{width:min(92%,560px);height:auto;display:block}
+.slide.marca a{min-height:46px;padding:0 30px;border-radius:23px;background:var(--ink);color:var(--ivory);text-decoration:none;font-size:14px;font-weight:600;display:flex;align-items:center}
+.dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:8px;z-index:2}
+.dots button{width:28px;height:28px;padding:0;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dots button i{width:9px;height:9px;border-radius:5px;background:rgba(47,40,40,.3);transition:width .3s,background .3s}
+.dots button[aria-current="true"] i{width:24px;background:var(--ink)}
+.hero .in{max-width:1000px;margin:0 auto;padding:26px 20px 52px;display:grid;gap:16px;width:100%;box-sizing:border-box}
 .hero .ey{font-size:11px;letter-spacing:3px;font-weight:600;color:#6E4634}
 .hero h1{margin:0;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:42px;line-height:1.02}
 .hero p{margin:0;font-size:14px;line-height:1.55}
@@ -66,7 +76,8 @@ body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Ar
   .burger{display:none}
   .top .in{height:76px}
   .top .logo img{height:56px}
-  .hero .in{grid-template-columns:1fr 1fr;align-items:center;gap:40px;padding:48px 20px}
+  .hero .in{grid-template-columns:1fr 1fr;align-items:center;gap:40px;padding:48px 20px 60px}
+  .slide.marca img{width:min(70%,620px)}
   .hero h1{font-size:60px}
   .hero p{font-size:16px}
   .hero .cta a{flex:0 0 auto;padding:0 28px}
@@ -147,7 +158,13 @@ footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:va
     <a class="pill o" href="https://www.tiktok.com/@luvanabeautycare" target="_blank" rel="noopener">Síguenos en TikTok</a>
   </div>
 </div>
-<section class="hero"><div class="in">
+<section class="hero" aria-roledescription="carrusel" aria-label="Banner">
+<div class="slides" id="slides">
+<div class="slide marca on" role="group" aria-roledescription="diapositiva" aria-label="1 de 2">
+  <img src="img/logo.png?v=2" alt="LUVANA Beauty &amp; Care — Tu belleza, tu esencia.">
+  <a href="#productos">Ver productos</a>
+</div>
+<div class="slide" role="group" aria-roledescription="diapositiva" aria-label="2 de 2"><div class="in">
   <div style="display:grid;gap:14px">
     <div class="ey">MAQUILLAJE Y CUIDADO DE LA PIEL</div>
     <h1>Tu belleza,<br>tu esencia.</h1>
@@ -159,7 +176,10 @@ footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:va
     <div><img id="h2" src="img/combo-recargado-de-niacinamida.jpg" alt="Combo recargado de niacinamida"></div>
     <div><img id="h3" src="img/cosmetiquera-pequena-con-cierre.jpg" alt="Cosmetiquera pequeña con cierre"></div>
   </div>
-</div></section>
+</div></div>
+</div>
+<div class="dots" id="dots"></div>
+</section>
 <div class="controls" id="productos"><div class="in">
   <input class="search" id="q" type="search" placeholder="Buscar producto o marca…" aria-label="Buscar producto o marca">
   <div class="chips" id="cats" role="group" aria-label="Categoría"></div>
@@ -305,6 +325,25 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') $('lb').classLi
   const ver = () => b.classList.toggle('show', window.scrollY > 600);
   window.addEventListener('scroll', ver, { passive:true }); ver();
   b.onclick = () => window.scrollTo({ top:0, behavior:'smooth' });
+})();
+// ---------- banner que rota: logo grande ↔ banner con productos
+(function(){
+  const slides = [...document.querySelectorAll('#slides .slide')], dots = $('dots'), hero = document.querySelector('.hero');
+  let i = 0, timer = null, pausa = false;
+  const calma = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  slides.forEach((s, k) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Ver banner ' + (k+1)); b.innerHTML = '<i></i>'; b.onclick = () => { ir(k); reiniciar(); }; dots.appendChild(b); });
+  function ir(k){
+    i = (k + slides.length) % slides.length;
+    slides.forEach((s, n) => { const on = n === i; s.classList.toggle('on', on); s.setAttribute('aria-hidden', !on); s.inert = !on; });
+    [...dots.children].forEach((b, n) => b.setAttribute('aria-current', n === i));
+  }
+  function reiniciar(){ clearInterval(timer); if(!calma) timer = setInterval(() => { if(!pausa && !document.hidden) ir(i + 1); }, 6000); }
+  hero.addEventListener('mouseenter', () => pausa = true); hero.addEventListener('mouseleave', () => pausa = false);
+  hero.addEventListener('focusin', () => pausa = true); hero.addEventListener('focusout', () => pausa = false);
+  let x0 = null;
+  hero.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive:true });
+  hero.addEventListener('touchend', e => { if(x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if(Math.abs(dx) > 40){ ir(i + (dx < 0 ? 1 : -1)); reiniciar(); } x0 = null; });
+  ir(0); reiniciar();
 })();
 const DESTACADOS = [['h1', p => /brocha/.test(norm(p.n))], ['h2', p => /niacinamida/.test(norm(p.n))], ['h3', p => /cosmetiquera/.test(norm(p.n)) && /pequen/.test(norm(p.n))]];
 function renderHero(){
