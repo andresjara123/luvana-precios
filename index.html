@@ -70,6 +70,12 @@ body{margin:0;background:var(--ivory);color:var(--ink);font-family:Montserrat,Ar
 .totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:#fff;color:var(--ink);box-shadow:0 6px 18px rgba(47,40,40,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s,transform .2s,bottom .25s}
 .totop.show{opacity:1;pointer-events:auto;transform:none}
 .bar.show ~ .totop{bottom:calc(84px + env(safe-area-inset-bottom))}
+.pagos{display:grid;gap:8px;margin-top:14px}
+.pg{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--pink);border-radius:14px;padding:10px 12px}
+.pg small{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#6E4634;font-weight:600}
+.pg b{font-size:17px}
+.cpy{min-height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.cpy.ok{background:var(--ink);color:var(--ivory)}
 #productos{scroll-margin-top:120px}
 @media (min-width:860px){
   .dnav{display:flex}
@@ -192,7 +198,12 @@ footer .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:va
       <h2>Cómo pedir</h2>
       <div class="step"><i>1</i><div><b>Elige</b> tus productos con el botón Agregar.</div></div>
       <div class="step"><i>2</i><div><b>Toca "Pedir por WhatsApp":</b> el pedido llega listo con el total.</div></div>
-      <div class="step"><i>3</i><div><b>Te confirmamos</b> disponibilidad, pago y entrega.</div></div>
+      <div class="step"><i>3</i><div><b>Te confirmamos</b> disponibilidad y entrega.</div></div>
+      <div class="step"><i>4</i><div><b>Paga por transferencia</b> y envíanos el comprobante por WhatsApp.</div></div>
+      <div class="pagos">
+        <div class="pg"><div><small>Nequi</small><b>318 705 0354</b></div><button type="button" class="cpy" data-v="3187050354" aria-label="Copiar número de Nequi">Copiar</button></div>
+        <div class="pg"><div><small>Bancolombia · llave</small><b>@3187050354</b></div><button type="button" class="cpy" data-v="@3187050354" aria-label="Copiar llave de Bancolombia">Copiar</button></div>
+      </div>
     </section>
     <section class="box dark" id="contacto">
       <h2>Contacto</h2>
@@ -345,6 +356,14 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') $('lb').classLi
   hero.addEventListener('touchend', e => { if(x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if(Math.abs(dx) > 40){ ir(i + (dx < 0 ? 1 : -1)); reiniciar(); } x0 = null; });
   ir(0); reiniciar();
 })();
+// ---------- copiar datos de pago
+document.querySelectorAll('.cpy').forEach(b => b.addEventListener('click', async () => {
+  const v = b.dataset.v;
+  try { await navigator.clipboard.writeText(v); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = v; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(_){} ta.remove(); }
+  b.textContent = '¡Copiado!'; b.classList.add('ok');
+  setTimeout(() => { b.textContent = 'Copiar'; b.classList.remove('ok'); }, 1800);
+}));
 const DESTACADOS = [['h1', p => /brocha/.test(norm(p.n))], ['h2', p => /niacinamida/.test(norm(p.n))], ['h3', p => /cosmetiquera/.test(norm(p.n)) && /pequen/.test(norm(p.n))]];
 function renderHero(){
   DESTACADOS.forEach(([id, ok]) => { const p = P.find(x => x.f && ok(x)); const im = $(id); if(p){ im.src = p.f; im.alt = p.n; } });
