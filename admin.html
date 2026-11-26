@@ -107,6 +107,7 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
     <button type="button" role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button type="button" role="tab" data-tab="mercancia" aria-selected="false">Mercancía</button>
     <button type="button" role="tab" data-tab="gastos" aria-selected="false">Gastos</button>
+    <button type="button" role="tab" data-tab="notas" aria-selected="false" id="tabNotas">Notas</button>
   </nav>
 </header>
 
@@ -223,6 +224,47 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
       </label>
     </div>
     <div id="ventasList" class="sec"></div>
+  </section>
+
+  <!-- NOTAS DE CLIENTAS -->
+  <section id="tab-notas" class="sec hidden">
+    <div id="nSinSql" class="card hidden" style="background:var(--blush)"><b>Falta un paso en Supabase:</b> ejecuta <code>supabase/notas.sql</code> en el SQL Editor para activar las notas.</div>
+    <div class="grid2">
+      <div class="card">
+        <h2>Nueva nota</h2>
+        <p class="muted" style="margin:6px 0 0">Apunta lo que una clienta quiere y no tienes en stock. Cuando llegue, le avisas por WhatsApp desde aquí.</p>
+        <form id="nForm" class="form" style="margin-top:12px">
+          <label>Producto que busca<input id="nProd" list="nProdList" required placeholder="Ej: labial rojo mate, tono 05"></label>
+          <datalist id="nProdList"></datalist>
+          <div class="row">
+            <label style="flex:2 1 160px">Clienta (opcional)<input id="nCli" placeholder="Nombre"></label>
+            <label style="flex:2 1 160px">Celular (opcional)<input id="nCel" inputmode="tel" placeholder="3001234567"></label>
+            <label style="flex:1 1 90px">Cantidad<input id="nCant" type="number" min="1" step="1" value="1" required></label>
+          </div>
+          <label>Nota (opcional)<textarea id="nNota" placeholder="Color, tono, marca, para cuándo lo necesita…"></textarea></label>
+          <button class="btn dark" type="submit">Guardar nota</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Lo más pedido</h2>
+        <p class="muted" style="margin:6px 0 10px">Notas abiertas (pendientes o ya pedidas), agrupadas por producto. Te sirve para tu próximo pedido al proveedor.</p>
+        <div class="bars" id="nTop"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2>Notas</h2>
+        <div class="row">
+          <label style="max-width:230px">Mostrar
+            <select id="nFiltro">
+              <option value="abiertas" selected>Abiertas</option><option>Pendiente</option><option>Pedido al proveedor</option><option>Avisada</option><option>Cerrada</option><option value="todas">Todas</option>
+            </select>
+          </label>
+          <label style="max-width:240px">Buscar<input type="search" id="nBuscar" placeholder="Producto o clienta"></label>
+        </div>
+      </div>
+      <div id="nLista" class="sec" style="margin-top:10px"></div>
+    </div>
   </section>
 
   <!-- GASTOS -->
@@ -736,7 +778,7 @@ async function agregarProducto(e){
 async function abrir(t){
   tab = t;
   document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===t));
-  ['vender','cotizar','dashboard','ventas','inventario','mercancia','gastos'].forEach(x => show('tab-'+x, x===t));
+  ['vender','cotizar','dashboard','ventas','inventario','mercancia','gastos','notas'].forEach(x => show('tab-'+x, x===t));
   if(t==='vender'){ await cargarProductos(); renderVender(); renderCart(); }
   if(t==='cotizar'){ await cargarProductos(); renderCotizarLista(); renderCot(); }
   if(t==='dashboard') await renderDashboard();
@@ -744,6 +786,7 @@ async function abrir(t){
   if(t==='inventario'){ await cargarProductos(); renderInventario(); }
   if(t==='mercancia') await renderMercancia();
   if(t==='gastos') await renderGastos();
+  if(t==='notas') await renderNotas();
 }
 // ---------- MERCANCÍA: entradas, pedido al proveedor e historial
 let entrada = {}; // producto_id -> { cantidad, costo }
@@ -894,6 +937,78 @@ async function renderMercancia(){
   if(ok) await renderEntradas(); else $('entradasList').innerHTML = '';
 }
 
+// ---------- NOTAS: lo que piden las clientas y no hay en stock
+const ESTADOS_N = ['Pendiente', 'Pedido al proveedor', 'Avisada', 'Cerrada'];
+let notas = [];
+function celWa(c){ let d = String(c || '').replace(/\D/g, ''); if(d.length === 10) d = '57' + d; return d.length >= 11 ? d : ''; }
+function msgAviso(n){
+  return 'Hola' + (n.cliente ? ' ' + n.cliente : '') + ', ¡buenas noticias! Ya nos llegó ' + n.producto + (n.cantidad > 1 ? ' (' + n.cantidad + ' unid.)' : '') + ', que nos pediste en LUVANA Beauty & Care.\n\n¿Quieres que te lo separe? Quedo atenta. 💕';
+}
+async function cargarNotas(){
+  const { data, error } = await sb.from('solicitudes').select('*').order('creado', { ascending:false });
+  if(error) return { error };
+  notas = data; return { data };
+}
+function contarAbiertas(){ const n = notas.filter(x => x.estado === 'Pendiente' || x.estado === 'Pedido al proveedor').length; $('tabNotas').textContent = n ? 'Notas (' + n + ')' : 'Notas'; }
+async function renderNotas(){
+  const [r] = await Promise.all([cargarNotas(), productos.length ? null : cargarProductos()]);
+  show('nSinSql', !!r.error);
+  $('nProdList').innerHTML = productos.filter(p => p.activo).map(p => '<option value="'+esc(p.nombre)+'"></option>').join('');
+  if(r.error){ $('nLista').innerHTML = '<p class="muted">'+esc(r.error.message)+'</p>'; $('nTop').innerHTML = ''; return; }
+  contarAbiertas();
+  const abiertas = notas.filter(n => n.estado === 'Pendiente' || n.estado === 'Pedido al proveedor');
+  const g = {};
+  abiertas.forEach(n => { const k = norm(n.producto.trim()); g[k] = g[k] || { nombre:n.producto.trim(), u:0, c:0 }; g[k].u += n.cantidad; g[k].c++; });
+  const top = Object.values(g).sort((a,b) => b.u - a.u || b.c - a.c).slice(0, 10);
+  bars($('nTop'), top.map(x => [x.nombre, x.u, x.u + ' unid. · ' + x.c + (x.c === 1 ? ' clienta' : ' clientas')]));
+  if(!top.length) $('nTop').innerHTML = '<p class="muted">No hay notas abiertas.</p>';
+  const filtro = $('nFiltro').value, q = norm($('nBuscar').value.trim());
+  const lista = notas.filter(n => (filtro === 'todas' || (filtro === 'abiertas' ? (n.estado === 'Pendiente' || n.estado === 'Pedido al proveedor') : n.estado === filtro)) && (!q || norm(n.producto+' '+(n.cliente||'')+' '+(n.celular||'')+' '+(n.nota||'')).includes(q)));
+  const el = $('nLista');
+  if(!lista.length){ el.innerHTML = '<p class="muted">No hay notas para mostrar.</p>'; return; }
+  el.innerHTML = '';
+  lista.forEach(n => {
+    const d = document.createElement('div'); d.className = 'venta' + (n.estado === 'Cerrada' ? ' anulada' : '');
+    const fd = new Date(n.creado), f = isNaN(fd) ? '' : fd.toLocaleString('es-CO', { day:'2-digit', month:'short', hour:'numeric', minute:'2-digit' });
+    const p = n.producto_id ? productos.find(x => x.id === n.producto_id) : productos.find(x => norm(x.nombre) === norm(n.producto.trim()));
+    const stock = p ? (p.stock > 0 ? '<span class="pill">Hay '+p.stock+' en stock</span>' : '<span class="pill red">Agotado</span>') : '';
+    d.innerHTML = '<div class="h"><span><b>'+esc(n.producto)+'</b>'+(n.cantidad > 1 ? ' x'+n.cantidad : '')+' '+stock+'</span><span class="muted">'+esc(f)+'</span></div>'
+      + '<div style="font-size:14px;margin-top:4px">'+esc(n.cliente || 'Sin nombre')+(n.celular ? ' · '+esc(n.celular) : '')+'</div>'
+      + (n.nota ? '<p class="muted" style="margin:4px 0 0">'+esc(n.nota)+'</p>' : '')
+      + '<div class="row" style="margin-top:10px"><select aria-label="Estado de la nota" style="max-width:220px">'+ESTADOS_N.map(e => '<option'+(e === n.estado ? ' selected' : '')+'>'+e+'</option>').join('')+'</select>'
+      + '<a class="btn small wa" target="_blank" rel="noopener">Avisar por WhatsApp</a><button type="button" class="btn small">Eliminar</button></div>';
+    const sel = d.querySelector('select'), wa = d.querySelector('a.wa'), del = d.querySelector('button');
+    sel.onchange = async () => {
+      const { error } = await sb.from('solicitudes').update({ estado:sel.value, actualizado:new Date().toISOString() }).eq('id', n.id);
+      if(error){ sel.value = n.estado; return toast(error.message, true); }
+      n.estado = sel.value; toast('Nota: '+sel.value); renderNotas();
+    };
+    const cel = celWa(n.celular);
+    if(cel){
+      wa.href = 'https://wa.me/' + cel + '?text=' + encodeURIComponent(msgAviso(n));
+      wa.onclick = () => { if(n.estado === 'Pendiente' || n.estado === 'Pedido al proveedor'){ setTimeout(async () => { const { error } = await sb.from('solicitudes').update({ estado:'Avisada', actualizado:new Date().toISOString() }).eq('id', n.id); if(!error){ n.estado = 'Avisada'; toast('Nota marcada como Avisada'); renderNotas(); } }, 400); } };
+    } else { wa.remove(); }
+    del.onclick = async () => {
+      if(!confirm('¿Eliminar la nota de "'+n.producto+'"?')) return;
+      const { error } = await sb.from('solicitudes').delete().eq('id', n.id);
+      if(error) return toast(error.message, true);
+      toast('Nota eliminada'); renderNotas();
+    };
+    el.appendChild(d);
+  });
+}
+async function guardarNota(e){
+  e.preventDefault();
+  const producto = $('nProd').value.trim(); if(!producto) return;
+  const cantidad = parseInt($('nCant').value, 10);
+  const p = productos.find(x => norm(x.nombre) === norm(producto));
+  const n = { producto, producto_id: p ? p.id : null, cliente:$('nCli').value.trim() || null, celular:$('nCel').value.trim() || null, cantidad: cantidad > 0 ? cantidad : 1, nota:$('nNota').value.trim() || null, estado:'Pendiente' };
+  const { error } = await sb.from('solicitudes').insert(n);
+  if(error) return toast(error.message + (/solicitudes/i.test(error.message) ? ' (¿ya ejecutaste supabase/notas.sql?)' : ''), true);
+  toast('Nota guardada'); e.target.reset(); $('nCant').value = 1;
+  renderNotas();
+}
+
 // ---------- GASTOS del negocio (para la ganancia neta)
 function fechaLocal(d){ d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 async function cargarGastos(periodo){
@@ -969,7 +1084,8 @@ async function descargarRespaldo(){
       todo('ventas', '*', 'id'),
       todo('venta_items', '*', 'id')
     ]);
-    let ent = [], entItems = [], gas = [];
+    let ent = [], entItems = [], gas = [], sol = [];
+    try { sol = await todo('solicitudes', '*', 'id'); } catch(_){ /* aún sin notas.sql */ }
     try { gas = await todo('gastos', '*', 'id'); } catch(_){ /* aún sin gastos.sql */ }
     try { [ent, entItems] = await Promise.all([todo('entradas', '*', 'id'), todo('entrada_items', '*', 'id')]); } catch(_){ /* aún sin mercancia.sql */ }
     const fecha = d => d ? new Date(d).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' }) : '';
@@ -981,6 +1097,7 @@ async function descargarRespaldo(){
     add(hojaProd, 'Productos', [6,42,18,20,20,10,10,10,8,12,8,40,18]);
     add(hojaVentas, 'Ventas', [8,18,24,16,10,10,10,8,40]);
     add(hojaItems, 'Detalle de ventas', [8,10,42,10,14,14,12,12]);
+    add(sol.map(s => ({ 'Nota #':s.id, 'Fecha':fecha(s.creado), 'Clienta':s.cliente||'', 'Celular':s.celular||'', 'Producto':s.producto, 'Cantidad':s.cantidad, 'Nota':s.nota||'', 'Estado':s.estado })), 'Notas de clientas', [8,18,20,14,36,10,36,18]);
     add(gas.map(g => ({ 'Gasto #':g.id, 'Fecha':g.fecha, 'Categoría':g.categoria, 'Descripción':g.descripcion||'', 'Valor':g.valor })), 'Gastos', [8,12,22,40,12]);
     add(ent.map(e => ({ 'Entrada #':e.id, 'Fecha':fecha(e.fecha), 'Proveedor':e.proveedor||'', 'Total invertido':e.total_costo, 'Anulada':e.anulada?'Sí':'No', 'Notas':e.notas||'' })), 'Entradas', [9,18,24,14,8,40]);
     add(entItems.map(i => ({ 'Entrada #':i.entrada_id, 'ID producto':i.producto_id ?? '', 'Producto':i.nombre, 'Cantidad':i.cantidad, 'Costo unitario':i.costo_unit, 'Subtotal':i.cantidad*i.costo_unit, 'Unidades antes':i.stock_anterior, 'Costo antes':i.costo_anterior })), 'Detalle de entradas', [9,10,42,10,14,12,14,12]);
@@ -997,12 +1114,13 @@ async function descargarRespaldo(){
 }
 
 async function entrar(session){
-  if(!session){ show('login', true); show('tabs', false); show('who', false); show('respaldoAviso', false); ['vender','cotizar','dashboard','ventas','inventario','mercancia','gastos'].forEach(x => show('tab-'+x, false)); return; }
+  if(!session){ show('login', true); show('tabs', false); show('who', false); show('respaldoAviso', false); ['vender','cotizar','dashboard','ventas','inventario','mercancia','gastos','notas'].forEach(x => show('tab-'+x, false)); return; }
   const { data: admin } = await sb.rpc('es_admin');
   if(!admin){ $('loginErr').textContent = 'Este correo no está autorizado como administradora (revisa la tabla admins).'; await sb.auth.signOut(); return; }
   show('login', false); show('tabs', true); show('who', true);
   $('whoEmail').textContent = session.user.email;
   avisoRespaldo();
+  cargarNotas().then(r => { if(!r.error) contarAbiertas(); });
   abrir(tab);
 }
 
@@ -1032,6 +1150,7 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('pWa').onclick = e => { if(!msgPedido()){ e.preventDefault(); toast('No hay nada que pedir', true); } };
   $('pEntrada').onclick = pedidoAEntrada;
   $('gForm').onsubmit = registrarGasto; $('gPeriodo').onchange = renderGastos;
+  $('nForm').onsubmit = guardarNota; $('nFiltro').onchange = renderNotas; $('nBuscar').oninput = renderNotas;
   $('cq').oninput = renderCotizarLista; $('ccat').onchange = renderCotizarLista;
   $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
   $('cCopy').onclick = () => { const m = msgCot(); if(!m) return toast('La cotización está vacía', true); copiar(m); };
