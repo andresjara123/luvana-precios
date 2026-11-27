@@ -323,8 +323,10 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
       <div class="card">
         <h2>Entrada actual</h2>
         <div class="form" style="margin-top:8px">
-          <label>Proveedor<input id="mProv" list="provList" placeholder="Nombre del proveedor"></label>
-          <datalist id="provList"></datalist>
+          <div style="position:relative">
+            <label>Proveedor<input id="mProv" autocomplete="off" placeholder="Escribe para buscar o escribe uno nuevo" aria-autocomplete="list" aria-controls="mProvSug"></label>
+            <div id="mProvSug" class="sug" role="listbox" aria-label="Proveedores" hidden></div>
+          </div>
         </div>
         <div id="mItems" style="margin-top:8px"></div>
         <div class="total"><span>Total invertido</span><span id="mTotal">$0</span></div>
@@ -401,7 +403,10 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
     <label>Marca<input id="eMarca"></label>
     <label>Categoría<select id="eCat"></select></label>
     <div class="row">
-      <label style="flex:2 1 180px">Proveedor<input id="eProv" list="provList"></label>
+      <div style="flex:2 1 180px;position:relative">
+        <label>Proveedor<input id="eProv" autocomplete="off" placeholder="Escribe para buscar o uno nuevo" aria-autocomplete="list" aria-controls="eProvSug"></label>
+        <div id="eProvSug" class="sug" role="listbox" aria-label="Proveedores" hidden></div>
+      </div>
       <label style="flex:1 1 120px">Unidades mínimas<input id="eMin" type="number" min="0"></label>
     </div>
     <div class="row" style="justify-content:flex-end">
@@ -802,7 +807,6 @@ const tieneMercancia = () => productos.length > 0 && 'stock_minimo' in productos
 function proveedores(){ return [...new Set(productos.map(p => (p.proveedor || '').trim()).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'es')); }
 function renderProvListas(){
   const ps = proveedores();
-  $('provList').innerHTML = ps.map(p => '<option value="'+esc(p)+'"></option>').join('');
   const sel = $('pProv'), actual = sel.value;
   sel.innerHTML = '<option value="">Todos los proveedores</option>' + ps.map(p => '<option>'+esc(p)+'</option>').join('') + '<option value="__sin">Sin proveedor asignado</option>';
   if([...sel.options].some(o => o.value === actual)) sel.value = actual;
@@ -1003,6 +1007,31 @@ async function renderNotas(){
     el.appendChild(d);
   });
 }
+// Lista de sugerencias reutilizable (reemplaza <datalist>, que no se ve en varios celulares)
+function conSugerencias(input, box, opciones, alElegir){
+  const cerrar = () => { box.hidden = true; box.innerHTML = ''; };
+  const mostrar = (todas) => {
+    const q = norm(input.value.trim());
+    const ms = opciones().filter(o => todas || !q || norm(o.texto + ' ' + (o.extra || '')).includes(q)).filter(o => !(q && norm(o.texto) === q)).slice(0, 8);
+    if(!ms.length){ cerrar(); return; }
+    box.innerHTML = '';
+    ms.forEach(o => {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option');
+      b.innerHTML = '<span>'+esc(o.texto)+(o.extra ? ' <span class="st">· '+esc(o.extra)+'</span>' : '')+'</span>'+(o.der ? '<span class="st">'+esc(o.der)+'</span>' : '');
+      b.addEventListener('mousedown', e => e.preventDefault());
+      b.onclick = () => { input.value = o.texto; cerrar(); if(alElegir) alElegir(o); };
+      box.appendChild(b);
+    });
+    box.hidden = false;
+  };
+  input.addEventListener('input', () => mostrar(false));
+  input.addEventListener('focus', () => mostrar(false));
+  input.addEventListener('blur', () => setTimeout(() => { if(!box.contains(document.activeElement)) cerrar(); }, 150));
+  box.addEventListener('focusout', () => setTimeout(() => { if(!box.contains(document.activeElement) && document.activeElement !== input) cerrar(); }, 150));
+  input.addEventListener('keydown', e => { if(e.key === 'Escape') cerrar(); if(e.key === 'ArrowDown'){ const f = box.querySelector('button'); if(f){ e.preventDefault(); f.focus(); } } });
+}
+const opcionesProveedor = () => proveedores().map(p => { const n = productos.filter(x => x.proveedor === p).length; return { texto:p, der: n + (n === 1 ? ' producto' : ' productos') }; });
+
 // Sugerencias de productos al escribir (funciona igual en celular y computador)
 function sugerirProductos(){
   const box = $('nSug'), q = norm($('nProd').value.trim());
@@ -1174,6 +1203,8 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('pEntrada').onclick = pedidoAEntrada;
   $('gForm').onsubmit = registrarGasto; $('gPeriodo').onchange = renderGastos;
   $('nForm').onsubmit = guardarNota;
+  conSugerencias($('mProv'), $('mProvSug'), opcionesProveedor);
+  conSugerencias($('eProv'), $('eProvSug'), opcionesProveedor);
   $('nProd').addEventListener('input', sugerirProductos);
   $('nProd').addEventListener('focus', sugerirProductos);
   $('nProd').addEventListener('blur', () => setTimeout(() => { if(!$('nSug').contains(document.activeElement)) $('nSug').hidden = true; }, 150));
