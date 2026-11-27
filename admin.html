@@ -91,6 +91,11 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .qsum div{display:flex;justify-content:space-between;gap:10px}
 a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
+.sug{position:absolute;left:0;right:0;top:100%;z-index:20;margin-top:4px;background:#fff;border:1px solid #CDB7AA;border-radius:12px;box-shadow:0 10px 24px rgba(47,40,40,.15);max-height:260px;overflow-y:auto}
+.sug button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+.sug button:last-child{border-bottom:0}
+.sug button:hover,.sug button:focus{background:var(--blush);outline:none}
+.sug .st{font-size:12px;color:#6B5A55;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -234,8 +239,10 @@ a.btn.wa{background:#1F7A4D;border-color:#1F7A4D;color:#fff}
         <h2>Nueva nota</h2>
         <p class="muted" style="margin:6px 0 0">Apunta lo que una clienta quiere y no tienes en stock. Cuando llegue, le avisas por WhatsApp desde aquí.</p>
         <form id="nForm" class="form" style="margin-top:12px">
-          <label>Producto que busca<input id="nProd" list="nProdList" required placeholder="Ej: labial rojo mate, tono 05"></label>
-          <datalist id="nProdList"></datalist>
+          <div style="position:relative">
+            <label>Producto que busca<input id="nProd" required autocomplete="off" placeholder="Escribe para buscar o escribe uno nuevo" aria-autocomplete="list" aria-controls="nSug"></label>
+            <div id="nSug" class="sug" role="listbox" aria-label="Productos del inventario" hidden></div>
+          </div>
           <div class="row">
             <label style="flex:2 1 160px">Clienta (opcional)<input id="nCli" placeholder="Nombre"></label>
             <label style="flex:2 1 160px">Celular (opcional)<input id="nCel" inputmode="tel" placeholder="3001234567"></label>
@@ -953,7 +960,6 @@ function contarAbiertas(){ const n = notas.filter(x => x.estado === 'Pendiente' 
 async function renderNotas(){
   const [r] = await Promise.all([cargarNotas(), productos.length ? null : cargarProductos()]);
   show('nSinSql', !!r.error);
-  $('nProdList').innerHTML = productos.filter(p => p.activo).map(p => '<option value="'+esc(p.nombre)+'"></option>').join('');
   if(r.error){ $('nLista').innerHTML = '<p class="muted">'+esc(r.error.message)+'</p>'; $('nTop').innerHTML = ''; return; }
   contarAbiertas();
   const abiertas = notas.filter(n => n.estado === 'Pendiente' || n.estado === 'Pedido al proveedor');
@@ -997,6 +1003,23 @@ async function renderNotas(){
     el.appendChild(d);
   });
 }
+// Sugerencias de productos al escribir (funciona igual en celular y computador)
+function sugerirProductos(){
+  const box = $('nSug'), q = norm($('nProd').value.trim());
+  if(!q){ box.hidden = true; box.innerHTML = ''; return; }
+  const ms = productos.filter(p => p.activo && norm(p.nombre+' '+(p.marca||'')).includes(q)).slice(0, 8);
+  if(!ms.length){ box.hidden = true; box.innerHTML = ''; return; }
+  box.innerHTML = '';
+  ms.forEach(p => {
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option');
+    b.innerHTML = '<span>'+esc(p.nombre)+(p.marca ? ' <span class="st">· '+esc(p.marca)+'</span>' : '')+'</span><span class="st">'+(p.stock > 0 ? p.stock+' en stock' : 'Agotado')+'</span>';
+    b.addEventListener('mousedown', e => e.preventDefault());
+    b.onclick = () => { $('nProd').value = p.nombre; box.hidden = true; box.innerHTML = ''; $('nCli').focus(); };
+    box.appendChild(b);
+  });
+  box.hidden = false;
+}
+
 async function guardarNota(e){
   e.preventDefault();
   const producto = $('nProd').value.trim(); if(!producto) return;
@@ -1150,7 +1173,12 @@ if(!cfg.url || !cfg.anonKey || !window.supabase){
   $('pWa').onclick = e => { if(!msgPedido()){ e.preventDefault(); toast('No hay nada que pedir', true); } };
   $('pEntrada').onclick = pedidoAEntrada;
   $('gForm').onsubmit = registrarGasto; $('gPeriodo').onchange = renderGastos;
-  $('nForm').onsubmit = guardarNota; $('nFiltro').onchange = renderNotas; $('nBuscar').oninput = renderNotas;
+  $('nForm').onsubmit = guardarNota;
+  $('nProd').addEventListener('input', sugerirProductos);
+  $('nProd').addEventListener('focus', sugerirProductos);
+  $('nProd').addEventListener('blur', () => setTimeout(() => { if(!$('nSug').contains(document.activeElement)) $('nSug').hidden = true; }, 150));
+  $('nSug').addEventListener('focusout', () => setTimeout(() => { if(!$('nSug').contains(document.activeElement) && document.activeElement !== $('nProd')) $('nSug').hidden = true; }, 150));
+  $('nProd').addEventListener('keydown', e => { if(e.key === 'Escape') $('nSug').hidden = true; if(e.key === 'ArrowDown'){ const f = $('nSug').querySelector('button'); if(f){ e.preventDefault(); f.focus(); } } }); $('nFiltro').onchange = renderNotas; $('nBuscar').oninput = renderNotas;
   $('cq').oninput = renderCotizarLista; $('ccat').onchange = renderCotizarLista;
   $('cCliente').oninput = () => { renderCot(); renderCotizarLista(); }; $('cCel').oninput = () => { renderCot(); renderCotizarLista(); };
   $('cCopy').onclick = () => { const m = msgCot(); if(!m) return toast('La cotización está vacía', true); copiar(m); };
